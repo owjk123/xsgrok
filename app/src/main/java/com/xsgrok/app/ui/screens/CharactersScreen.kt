@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.xsgrok.app.data.model.Character
 import com.xsgrok.app.ui.XSGrokViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharactersScreen(viewModel: XSGrokViewModel) {
     val currentNovel by viewModel.currentNovel.collectAsState()
@@ -161,6 +162,7 @@ fun CharactersScreen(viewModel: XSGrokViewModel) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterCard(
     character: Character,
