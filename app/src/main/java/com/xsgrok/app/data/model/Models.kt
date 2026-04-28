@@ -9,6 +9,7 @@ data class Novel(
     val type: String,
     val style: String,
     val mainCharacter: String,
+    val outline: String = "",
     val characters: MutableList<Character> = mutableListOf(),
     val chapters: MutableList<Chapter> = mutableListOf(),
     val createdAt: Long = System.currentTimeMillis(),

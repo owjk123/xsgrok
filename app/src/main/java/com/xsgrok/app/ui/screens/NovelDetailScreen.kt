@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.xsgrok.app.R
 import com.xsgrok.app.data.model.Chapter
 import com.xsgrok.app.ui.Screen
 import com.xsgrok.app.ui.XSGrokViewModel
@@ -58,7 +60,7 @@ fun NovelDetailScreen(viewModel: XSGrokViewModel) {
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Main Character: ${novel.mainCharacter}",
+                        text = stringResource(R.string.main_character) + ": ${novel.mainCharacter}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -76,21 +78,21 @@ fun NovelDetailScreen(viewModel: XSGrokViewModel) {
                 ) {
                     Icon(Icons.Default.People, contentDescription = null)
                     Spacer(Modifier.width(4.dp))
-                    Text("Characters")
+                    Text(stringResource(R.string.characters))
                 }
                 FilledTonalButton(
                     onClick = { showChapterDialog = true }
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(Modifier.width(4.dp))
-                    Text("New Chapter")
+                    Text(stringResource(R.string.new_chapter))
                 }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "Chapters (${novel.chapters.size})",
+                text = stringResource(R.string.chapters) + " (${novel.chapters.size})",
                 style = MaterialTheme.typography.titleMedium
             )
             
@@ -112,7 +114,7 @@ fun NovelDetailScreen(viewModel: XSGrokViewModel) {
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "No chapters yet",
+                            stringResource(R.string.no_chapters),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -132,13 +134,13 @@ fun NovelDetailScreen(viewModel: XSGrokViewModel) {
         if (showChapterDialog) {
             AlertDialog(
                 onDismissRequest = { showChapterDialog = false },
-                title = { Text("New Chapter") },
+                title = { Text(stringResource(R.string.new_chapter)) },
                 text = {
                     OutlinedTextField(
                         value = chapterTitle,
                         onValueChange = { chapterTitle = it },
-                        label = { Text("Chapter Title") },
-                        placeholder = { Text("Enter chapter title") },
+                        label = { Text(stringResource(R.string.chapter_title)) },
+                        placeholder = { Text(stringResource(R.string.enter_chapter_title)) },
                         singleLine = true
                     )
                 },
@@ -152,12 +154,12 @@ fun NovelDetailScreen(viewModel: XSGrokViewModel) {
                             }
                         }
                     ) {
-                        Text("Generate")
+                        Text(stringResource(R.string.generate))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showChapterDialog = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -180,14 +182,14 @@ fun ChapterCard(chapter: Chapter) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Chapter ${chapter.order + 1}: ${chapter.title}",
+                    text = stringResource(R.string.chapter_num, chapter.order + 1) + ": ${chapter.title}",
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = "Expand"
+                        contentDescription = stringResource(R.string.expand)
                     )
                 }
             }

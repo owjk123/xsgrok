@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">XSGrok小说助手</string>
+    <string name="settings">设置</string>
+    <string name="new_novel">新建小说</string>
+    <string name="chapters">章节</string>
+    <string name="characters">角色管理</string>
+    <string name="drafts">草稿箱</string>
+    <string name="export">导出</string>
+    <string name="api_key">API密钥</string>
+    <string name="api_endpoint">API地址</string>
+    <string name="novel_title">小说标题</string>
+    <string name="novel_type">小说类型</string>
+    <string name="novel_style">小说风格</string>
+    <string name="main_character">主角</string>
+    <string name="generate">生成</string>
+    <string name="continue_writing">继续写作</string>
+    <string name="save">保存</string>
+    <string name="delete">删除</string>
+    <string name="dark_mode">深色模式</string>
+    <string name="light_mode">浅色模式</string>
+    
+    <!-- 底部导航 -->
+    <string name="home">首页</string>
+    <string name="new_label">新建</string>
+    
+    <!-- 界面标题 -->
+    <string name="novel_detail">小说详情</string>
+    <string name="generate_chapter">生成章节</string>
+    
+    <!-- 小说创建 -->
+    <string name="create_novel">创建小说</string>
+    <string name="enter_novel_title">请输入小说标题</string>
+    <string name="genre">类型</string>
+    <string name="style">风格</string>
+    <string name="outline">大纲</string>
+    <string name="enter_outline">请输入小说大纲</string>
+    <string name="describe_main_character">请描述主角设定</string>
+    
+    <!-- 角色管理 -->
+    <string name="add">添加</string>
+    <string name="cancel">取消</string>
+    <string name="add_character">添加角色</string>
+    <string name="name">名称</string>
+    <string name="role">角色</string>
+    <string name="description">描述</string>
+    <string name="protagonist">主角</string>
+    <string name="antagonist">反派</string>
+    <string name="supporting">配角</string>
+    <string name="minor">龙套</string>
+    <string name="no_characters">暂无角色</string>
+    <string name="delete_character">删除角色</string>
+    <string name="delete_character_confirm">确定要删除角色"%1$s"吗？</string>
+    
+    <!-- 章节生成 -->
+    <string name="chapter_title">章节标题</string>
+    <string name="enter_chapter_title">请输入章节标题</string>
+    <string name="novel_prefix">小说：</string>
+    <string name="stop">停止</string>
+    <string name="export_txt">导出TXT</string>
+    <string name="done">完成</string>
+    <string name="continue_label">继续</string>
+    <string name="generating">生成中...</string>
+    <string name="generated_content">已生成内容</string>
+    <string name="waiting_content">等待内容...</string>
+    <string name="export_novel">导出小说</string>
+    
+    <!-- 草稿箱 -->
+    <string name="no_drafts">暂无草稿</string>
+    <string name="create_first_novel">创建你的第一部小说</string>
+    <string name="created">创建时间</string>
+    
+    <!-- 设置 -->
+    <string name="model_selection">模型选择</string>
+    <string name="about">关于</string>
+    <string name="version">版本</string>
+    <string name="api_configuration">API配置</string>
+    <string name="enter_api_key">请输入API密钥</string>
+    <string name="toggle_visibility">切换可见性</string>
+    <string name="model">模型</string>
+    <string name="appearance">外观</string>
+    <string name="app_description">AI驱动的小说生成应用</string>
+    
+    <!-- 导航 -->
+    <string name="back">返回</string>
+    <string name="toggle_theme">切换主题</string>
+    
+    <!-- 全自动模式 -->
+    <string name="auto_mode">全自动</string>
+    <string name="manual_mode">手动模式</string>
+    <string name="enter_one_sentence">输入一句话开始你的小说...</string>
+    <string name="start_auto">开始自动生成</string>
+    <string name="next_chapter">下一章</string>
+    <string name="guide_next">引导下一章...</string>
+    <string name="auto_generating">自动生成小说中...</string>
+    
+    <!-- 首页 -->
+    <string name="my_novels">我的小说</string>
+    <string name="no_novels">暂无小说</string>
+    <string name="chapters_count">%1$d 章</string>
+    <string name="delete_novel">删除小说</string>
+    <string name="delete_novel_confirm">确定要删除小说"%1$s"吗？</string>
+    
+    <!-- 小说详情 -->
+    <string name="new_chapter">新建章节</string>
+    <string name="no_chapters">暂无章节</string>
+    <string name="chapter_num">第%1$d章</string>
+    <string name="expand">展开</string>
+</resources>

@@ -10,10 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.xsgrok.app.R
 import com.xsgrok.app.data.remote.ApiEndpoints
 import com.xsgrok.app.ui.XSGrokViewModel
 
@@ -42,7 +44,7 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "API Configuration",
+                    text = stringResource(R.string.api_configuration),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -53,14 +55,14 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
                         apiKey = it
                         viewModel.updateApiKey(it)
                     },
-                    label = { Text("API Key") },
-                    placeholder = { Text("Enter your API key") },
+                    label = { Text(stringResource(R.string.api_key)) },
+                    placeholder = { Text(stringResource(R.string.enter_api_key)) },
                     visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { showApiKey = !showApiKey }) {
                             Icon(
                                 if (showApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = "Toggle visibility"
+                                contentDescription = stringResource(R.string.toggle_visibility)
                             )
                         }
                     },
@@ -80,7 +82,7 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
                             endpoint = it
                             viewModel.updateEndpoint(it)
                         },
-                        label = { Text("API Endpoint") },
+                        label = { Text(stringResource(R.string.api_endpoint)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = endpointExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -113,7 +115,7 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
                     OutlinedTextField(
                         value = selectedModel,
                         onValueChange = {},
-                        label = { Text("Model") },
+                        label = { Text(stringResource(R.string.model)) },
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelExpanded) },
                         modifier = Modifier
@@ -147,7 +149,7 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Appearance",
+                    text = stringResource(R.string.appearance),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -163,7 +165,7 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Dark Mode")
+                        Text(stringResource(R.string.dark_mode))
                     }
                     Switch(
                         checked = apiConfig.isDarkMode,
@@ -181,7 +183,7 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "About",
+                    text = stringResource(R.string.about),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -190,7 +192,7 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = "AI-powered novel generation app",
+                    text = stringResource(R.string.app_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

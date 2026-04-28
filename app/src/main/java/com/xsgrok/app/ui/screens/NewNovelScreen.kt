@@ -9,22 +9,24 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.xsgrok.app.R
 import com.xsgrok.app.ui.XSGrokViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewNovelScreen(viewModel: XSGrokViewModel) {
     var title by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf("Fantasy") }
-    var selectedStyle by remember { mutableStateOf("Epic") }
+    var selectedType by remember { mutableStateOf("玄幻") }
+    var selectedStyle by remember { mutableStateOf("热血") }
     var mainCharacter by remember { mutableStateOf("") }
     var typeExpanded by remember { mutableStateOf(false) }
     var styleExpanded by remember { mutableStateOf(false) }
     
-    val types = listOf("Fantasy", "Sci-Fi", "Romance", "Mystery", "Adventure", "Historical", "Horror", "Comedy")
-    val styles = listOf("Epic", "Light", "Dark", "Humorous", "Dramatic", "Slice of Life")
+    val types = listOf("玄幻", "都市", "科幻", "悬疑", "冒险", "历史", "恐怖", "喜剧", "言情", "武侠")
+    val styles = listOf("热血", "轻松", "黑暗", "幽默", "戏剧", "日常", "温馨", "严肃")
     
     Column(
         modifier = Modifier
@@ -38,7 +40,7 @@ fun NewNovelScreen(viewModel: XSGrokViewModel) {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Create New Novel",
+                    text = stringResource(R.string.create_novel),
                     style = MaterialTheme.typography.titleLarge
                 )
                 
@@ -47,8 +49,8 @@ fun NewNovelScreen(viewModel: XSGrokViewModel) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Novel Title") },
-                    placeholder = { Text("Enter your novel title") },
+                    label = { Text(stringResource(R.string.novel_title)) },
+                    placeholder = { Text(stringResource(R.string.enter_novel_title)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
@@ -63,7 +65,7 @@ fun NewNovelScreen(viewModel: XSGrokViewModel) {
                     OutlinedTextField(
                         value = selectedType,
                         onValueChange = {},
-                        label = { Text("Novel Type") },
+                        label = { Text(stringResource(R.string.genre)) },
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
                         modifier = Modifier
@@ -95,7 +97,7 @@ fun NewNovelScreen(viewModel: XSGrokViewModel) {
                     OutlinedTextField(
                         value = selectedStyle,
                         onValueChange = {},
-                        label = { Text("Writing Style") },
+                        label = { Text(stringResource(R.string.style)) },
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = styleExpanded) },
                         modifier = Modifier
@@ -123,8 +125,8 @@ fun NewNovelScreen(viewModel: XSGrokViewModel) {
                 OutlinedTextField(
                     value = mainCharacter,
                     onValueChange = { mainCharacter = it },
-                    label = { Text("Main Character") },
-                    placeholder = { Text("Describe your main character") },
+                    label = { Text(stringResource(R.string.main_character)) },
+                    placeholder = { Text(stringResource(R.string.describe_main_character)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     maxLines = 4
@@ -143,7 +145,7 @@ fun NewNovelScreen(viewModel: XSGrokViewModel) {
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Create Novel")
+                    Text(stringResource(R.string.create_novel))
                 }
             }
         }

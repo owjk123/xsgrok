@@ -10,8 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.xsgrok.app.R
 import com.xsgrok.app.data.model.Novel
 import com.xsgrok.app.ui.Screen
 import com.xsgrok.app.ui.XSGrokViewModel
@@ -31,7 +33,7 @@ fun HomeScreen(viewModel: XSGrokViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "My Novels",
+                text = stringResource(R.string.my_novels),
                 style = MaterialTheme.typography.headlineMedium
             )
             Button(
@@ -40,7 +42,7 @@ fun HomeScreen(viewModel: XSGrokViewModel) {
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("New Novel")
+                Text(stringResource(R.string.new_novel))
             }
         }
         
@@ -60,13 +62,13 @@ fun HomeScreen(viewModel: XSGrokViewModel) {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "No novels yet",
+                        stringResource(R.string.no_novels),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Create your first novel to get started",
+                        stringResource(R.string.create_first_novel),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -130,13 +132,13 @@ fun NovelCard(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${novel.chapters.size} chapters",
+                    text = stringResource(R.string.chapters_count, novel.chapters.size),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             IconButton(onClick = { showDeleteDialog = true }) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
             }
         }
     }
@@ -144,8 +146,8 @@ fun NovelCard(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Novel") },
-            text = { Text("Are you sure you want to delete \"${novel.title}\"?") },
+            title = { Text(stringResource(R.string.delete_novel)) },
+            text = { Text(stringResource(R.string.delete_novel_confirm, novel.title)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -153,12 +155,12 @@ fun NovelCard(
                         showDeleteDialog = false
                     }
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )

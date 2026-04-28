@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">XSGrok</string>
     <string name="settings">Settings</string>
@@ -18,4 +19,91 @@
     <string name="delete">Delete</string>
     <string name="dark_mode">Dark Mode</string>
     <string name="light_mode">Light Mode</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="home">Home</string>
+    <string name="new_label">New</string>
+    
+    <!-- Screen Titles -->
+    <string name="novel_detail">Novel Detail</string>
+    <string name="generate_chapter">Generate Chapter</string>
+    
+    <!-- Novel Creation -->
+    <string name="create_novel">Create Novel</string>
+    <string name="enter_novel_title">Enter novel title</string>
+    <string name="genre">Genre</string>
+    <string name="style">Style</string>
+    <string name="outline">Outline</string>
+    <string name="enter_outline">Enter your novel outline</string>
+    <string name="describe_main_character">Describe your main character</string>
+    
+    <!-- Characters -->
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="add_character">Add Character</string>
+    <string name="name">Name</string>
+    <string name="role">Role</string>
+    <string name="description">Description</string>
+    <string name="protagonist">Protagonist</string>
+    <string name="antagonist">Antagonist</string>
+    <string name="supporting">Supporting</string>
+    <string name="minor">Minor</string>
+    <string name="no_characters">No characters yet</string>
+    <string name="delete_character">Delete Character</string>
+    <string name="delete_character_confirm">Are you sure you want to delete \"%1$s\"?</string>
+    
+    <!-- Chapter Generation -->
+    <string name="chapter_title">Chapter Title</string>
+    <string name="enter_chapter_title">Enter chapter title</string>
+    <string name="novel_prefix">Novel: </string>
+    <string name="stop">Stop</string>
+    <string name="export_txt">Export TXT</string>
+    <string name="done">Done</string>
+    <string name="continue_label">Continue</string>
+    <string name="generating">Generating...</string>
+    <string name="generated_content">Generated Content</string>
+    <string name="waiting_content">Waiting for content...</string>
+    <string name="export_novel">Export Novel</string>
+    
+    <!-- Drafts -->
+    <string name="no_drafts">No drafts</string>
+    <string name="create_first_novel">Create your first novel to get started</string>
+    <string name="created">Created</string>
+    
+    <!-- Settings -->
+    <string name="model_selection">Model Selection</string>
+    <string name="about">About</string>
+    <string name="version">Version</string>
+    <string name="api_configuration">API Configuration</string>
+    <string name="enter_api_key">Enter your API key</string>
+    <string name="toggle_visibility">Toggle visibility</string>
+    <string name="model">Model</string>
+    <string name="appearance">Appearance</string>
+    <string name="app_description">AI-powered novel generation app</string>
+    
+    <!-- Navigation -->
+    <string name="back">Back</string>
+    <string name="toggle_theme">Toggle Theme</string>
+    
+    <!-- Auto Mode -->
+    <string name="auto_mode">Auto</string>
+    <string name="manual_mode">Manual Mode</string>
+    <string name="enter_one_sentence">Enter one sentence to start your novel...</string>
+    <string name="start_auto">Start Auto Generation</string>
+    <string name="next_chapter">Next Chapter</string>
+    <string name="guide_next">Guide next chapter...</string>
+    <string name="auto_generating">Auto generating novel...</string>
+    
+    <!-- Home -->
+    <string name="my_novels">My Novels</string>
+    <string name="no_novels">No novels yet</string>
+    <string name="chapters_count">%1$d chapters</string>
+    <string name="delete_novel">Delete Novel</string>
+    <string name="delete_novel_confirm">Are you sure you want to delete \"%1$s\"?</string>
+    
+    <!-- Novel Detail -->
+    <string name="new_chapter">New Chapter</string>
+    <string name="no_chapters">No chapters yet</string>
+    <string name="chapter_num">Chapter %1$d</string>
+    <string name="expand">Expand</string>
 </resources>

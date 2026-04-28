@@ -12,8 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.xsgrok.app.R
 import com.xsgrok.app.ui.XSGrokViewModel
 import kotlinx.coroutines.delay
 import java.io.File
@@ -47,12 +49,12 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Generate Chapter",
+                        text = stringResource(R.string.generate_chapter),
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Novel: ${novel.title}",
+                        text = stringResource(R.string.novel_prefix) + novel.title,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -65,8 +67,8 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                 OutlinedTextField(
                     value = chapterTitle,
                     onValueChange = { chapterTitle = it },
-                    label = { Text("Chapter Title") },
-                    placeholder = { Text("Enter chapter title") },
+                    label = { Text(stringResource(R.string.chapter_title)) },
+                    placeholder = { Text(stringResource(R.string.enter_chapter_title)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -88,7 +90,7 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                     ) {
                         Icon(Icons.Default.AutoAwesome, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text("Generate")
+                        Text(stringResource(R.string.generate))
                     }
                     
                     if (showContinueOption) {
@@ -98,7 +100,7 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                         ) {
                             Icon(Icons.Default.Refresh, contentDescription = null)
                             Spacer(Modifier.width(4.dp))
-                            Text("Continue")
+                            Text(stringResource(R.string.continue_label))
                         }
                     }
                 }
@@ -118,7 +120,7 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (isGenerating) "Generating..." else "Generated Content",
+                                text = if (isGenerating) stringResource(R.string.generating) else stringResource(R.string.generated_content),
                                 style = MaterialTheme.typography.titleSmall
                             )
                             if (isGenerating) {
@@ -137,7 +139,7 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                                 .verticalScroll(rememberScrollState())
                         ) {
                             Text(
-                                text = streamingContent.ifBlank { "Waiting for content..." },
+                                text = streamingContent.ifBlank { stringResource(R.string.waiting_content) },
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -157,7 +159,7 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                         ) {
                             Icon(Icons.Default.Stop, contentDescription = null)
                             Spacer(Modifier.width(4.dp))
-                            Text("Stop")
+                            Text(stringResource(R.string.stop))
                         }
                     }
                     
@@ -170,7 +172,7 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                     ) {
                         Icon(Icons.Default.Share, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text("Export TXT")
+                        Text(stringResource(R.string.export_txt))
                     }
                     
                     FilledTonalButton(
@@ -179,7 +181,7 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                     ) {
                         Icon(Icons.Default.Check, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text("Done")
+                        Text(stringResource(R.string.done))
                     }
                 }
             }
@@ -217,7 +219,7 @@ private fun exportToTxt(context: Context, title: String, content: String) {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         
-        context.startActivity(Intent.createChooser(shareIntent, "Export Novel"))
+        context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.export_novel)))
     } catch (e: Exception) {
         e.printStackTrace()
     }

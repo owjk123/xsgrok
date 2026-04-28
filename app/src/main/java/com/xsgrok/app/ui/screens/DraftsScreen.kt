@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.xsgrok.app.R
 import com.xsgrok.app.data.model.Novel
 import com.xsgrok.app.ui.XSGrokViewModel
 import java.text.SimpleDateFormat
@@ -27,7 +29,7 @@ fun DraftsScreen(viewModel: XSGrokViewModel) {
             .padding(16.dp)
     ) {
         Text(
-            text = "Drafts (${drafts.size})",
+            text = stringResource(R.string.drafts) + " (${drafts.size})",
             style = MaterialTheme.typography.titleMedium
         )
         
@@ -47,7 +49,7 @@ fun DraftsScreen(viewModel: XSGrokViewModel) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "No drafts",
+                        stringResource(R.string.no_drafts),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -66,7 +68,7 @@ fun DraftsScreen(viewModel: XSGrokViewModel) {
 
 @Composable
 fun DraftCard(novel: Novel) {
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -91,7 +93,7 @@ fun DraftCard(novel: Novel) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Created: ${dateFormat.format(Date(novel.createdAt))}",
+                text = stringResource(R.string.created) + ": ${dateFormat.format(Date(novel.createdAt))}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

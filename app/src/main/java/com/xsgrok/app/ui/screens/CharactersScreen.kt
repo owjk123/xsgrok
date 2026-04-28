@@ -9,7 +9,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.xsgrok.app.R
 import com.xsgrok.app.data.model.Character
 import com.xsgrok.app.ui.XSGrokViewModel
 
@@ -38,13 +40,13 @@ fun CharactersScreen(viewModel: XSGrokViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Characters (${novel.characters.size})",
+                    text = stringResource(R.string.characters) + " (${novel.characters.size})",
                     style = MaterialTheme.typography.titleMedium
                 )
                 FilledTonalButton(onClick = { showAddDialog = true }) {
                     Icon(Icons.Default.PersonAdd, contentDescription = null)
                     Spacer(Modifier.width(4.dp))
-                    Text("Add")
+                    Text(stringResource(R.string.add))
                 }
             }
             
@@ -64,7 +66,7 @@ fun CharactersScreen(viewModel: XSGrokViewModel) {
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "No characters yet",
+                            stringResource(R.string.no_characters),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -86,13 +88,13 @@ fun CharactersScreen(viewModel: XSGrokViewModel) {
         if (showAddDialog) {
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
-                title = { Text("Add Character") },
+                title = { Text(stringResource(R.string.add_character)) },
                 text = {
                     Column {
                         OutlinedTextField(
                             value = characterName,
                             onValueChange = { characterName = it },
-                            label = { Text("Name") },
+                            label = { Text(stringResource(R.string.name)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
@@ -104,7 +106,7 @@ fun CharactersScreen(viewModel: XSGrokViewModel) {
                             OutlinedTextField(
                                 value = characterRole,
                                 onValueChange = {},
-                                label = { Text("Role") },
+                                label = { Text(stringResource(R.string.role)) },
                                 readOnly = true,
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleExpanded) },
                                 modifier = Modifier
@@ -130,7 +132,7 @@ fun CharactersScreen(viewModel: XSGrokViewModel) {
                         OutlinedTextField(
                             value = characterDescription,
                             onValueChange = { characterDescription = it },
-                            label = { Text("Description") },
+                            label = { Text(stringResource(R.string.description)) },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 2,
                             maxLines = 4
@@ -149,12 +151,12 @@ fun CharactersScreen(viewModel: XSGrokViewModel) {
                             }
                         }
                     ) {
-                        Text("Add")
+                        Text(stringResource(R.string.add))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showAddDialog = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -200,7 +202,7 @@ fun CharacterCard(
                 }
             }
             IconButton(onClick = { showDeleteDialog = true }) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
             }
         }
     }
@@ -208,8 +210,8 @@ fun CharacterCard(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Character") },
-            text = { Text("Are you sure you want to delete \"${character.name}\"?") },
+            title = { Text(stringResource(R.string.delete_character)) },
+            text = { Text(stringResource(R.string.delete_character_confirm, character.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -217,12 +219,12 @@ fun CharacterCard(
                         showDeleteDialog = false
                     }
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
