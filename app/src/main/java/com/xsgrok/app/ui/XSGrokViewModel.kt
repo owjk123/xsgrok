@@ -577,7 +577,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     fun generateFactions() {
-    fun generateFactions() {
         val novel = _currentNovel.value ?: return
         generateSimpleItems("势力/组织") { name, desc ->
             novel.worldBuilding.factions.add(Faction(name = name, description = desc))
@@ -597,6 +596,11 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             novel.worldBuilding.skills.add(Skill(name = name, description = desc))
         }
     }
+        }
+    }
+    
+    
+    fun generateTimeline() {
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
         
@@ -641,7 +645,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             _isGenerating.value = false
         }
     }
-    
     private fun generateSimpleItems(typeName: String, adder: Novel.(String, String) -> Unit) {
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
