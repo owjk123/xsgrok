@@ -1285,25 +1285,6 @@ ${if (isConvergence) "5. 【重要】本章必须推进主线结局，回收至�
             请创作这一章，字数3000-5000字。
         """.trimIndent()
     }
-}
-
-data class XSGrokUiState(
-    val apiConfig: ApiConfig = ApiConfig(),
-    val currentScreen: Screen = Screen.Home
-)
-
-enum class Screen {
-    Home,
-    Settings,
-    NewNovel,
-    NovelDetail,
-    Characters,
-    Drafts,
-    ChapterGeneration,
-    AutoMode,
-    Bookshelf,
-    Reading,
-    WorldBuilding
 
     // ========== P1-P4 新增方法 ==========
     
