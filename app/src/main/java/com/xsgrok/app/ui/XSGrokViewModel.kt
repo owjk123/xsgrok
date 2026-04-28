@@ -92,7 +92,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             val trimmed = line.trim()
             // 尝试解析节点（格式：1. 标题 或 【标题】 等）
             val title = when {
-                trimmed.matches(Regex("^\d+[.、].+")) -> trimmed.replace(Regex("^\d+[.、]\s*"), "")
+                trimmed.matches(Regex("""^\d+[.、].+""")) -> trimmed.replace(Regex("""^\d+[.、]\s*"""), "")
                 trimmed.startsWith("【") && trimmed.endsWith("】") -> trimmed.drop(1).dropLast(1)
                 trimmed.startsWith("[") && trimmed.endsWith("]") -> trimmed.drop(1).dropLast(1)
                 trimmed.length > 5 && index < 15 -> trimmed.take(50)
@@ -127,9 +127,9 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         val foreshadowings = mutableListOf<Foreshadowing>()
         // 简单的伏笔提取逻辑：查找括号内容或特定标记
         val patterns = listOf(
-            Regex("【(.+?)】"),
-            Regex("（(.+?)）"),
-            Regex("\[(.+?)\]")
+            Regex("""【(.+?)】"""),
+            Regex("""（(.+?)）"""),
+            Regex("""\[(.+?)\]""")
         )
         
         for (pattern in patterns) {
@@ -159,7 +159,9 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 isResolved = true,
                 resolvedChapter = chapterNum
             )
-            localStorage.saveNovel(novel)
+            viewModelScope.launch {
+                localStorage.saveNovel(novel)
+            }
             _currentNovel.value = novel
         }
     }

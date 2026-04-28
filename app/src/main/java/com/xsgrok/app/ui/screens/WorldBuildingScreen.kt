@@ -629,7 +629,7 @@ fun TimelineTab(novel: Novel, viewModel: XSGrokViewModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(novel.worldBuilding.timeline.sortedBy { it.chapter }) { event ->
+            items(novel.worldBuilding.timeline.sortedBy { it.time }) { event ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
