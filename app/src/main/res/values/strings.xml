@@ -143,7 +143,6 @@
     <string name="enter_api_key">Enter your API key</string>
     <string name="toggle_visibility">Toggle visibility</string>
     <string name="model">Model</string>
-    <string name="appearance">Appearance</string>
     <string name="app_description">AI-powered novel generation app</string>
     
     <!-- Drafts -->

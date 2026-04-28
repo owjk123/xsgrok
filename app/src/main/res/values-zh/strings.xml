@@ -143,7 +143,6 @@
     <string name="enter_api_key">请输入API密钥</string>
     <string name="toggle_visibility">切换可见性</string>
     <string name="model">模型</string>
-    <string name="appearance">外观</string>
     <string name="app_description">AI驱动的小说生成应用</string>
     
     <!-- 草稿箱 -->
