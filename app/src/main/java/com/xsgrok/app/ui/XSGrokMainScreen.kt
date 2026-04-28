@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xsgrok.app.ui.screens.*
+import com.xsgrok.app.ui.theme.XSGrokTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
