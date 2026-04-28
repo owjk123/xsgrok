@@ -246,8 +246,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             abilities = abilities
         )
         novel.characters.add(character)
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun updateCharacter(
@@ -273,16 +275,20 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 background = background,
                 abilities = abilities
             )
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
+            viewModelScope.launch {
+                localStorage.saveNovel(novel)
+                _currentNovel.value = novel
+            }
         }
     }
     
     fun deleteCharacter(characterId: String) {
         val novel = _currentNovel.value ?: return
         novel.characters.removeAll { it.id == characterId }
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun generateCharacters() {
@@ -342,27 +348,36 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     
     fun updateWorldBuilding(worldBackground: String, powerSystem: String, rules: String = "") {
         val novel = _currentNovel.value ?: return
-        novel.worldBuilding = novel.worldBuilding.copy(
+        val updatedWorldBuilding = novel.worldBuilding.copy(
             worldBackground = worldBackground,
             powerSystem = powerSystem,
             rules = rules
         )
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
+        viewModelScope.launch {
+            localStorage.saveNovel(updatedNovel)
+            _currentNovel.value = updatedNovel
+        }
     }
     
     fun updateWorldBackground(background: String) {
         val novel = _currentNovel.value ?: return
-        novel.worldBuilding = novel.worldBuilding.copy(worldBackground = background)
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        val updatedWorldBuilding = novel.worldBuilding.copy(worldBackground = background)
+        val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
+        viewModelScope.launch {
+            localStorage.saveNovel(updatedNovel)
+            _currentNovel.value = updatedNovel
+        }
     }
     
     fun updatePowerSystem(system: String) {
         val novel = _currentNovel.value ?: return
-        novel.worldBuilding = novel.worldBuilding.copy(powerSystem = system)
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        val updatedWorldBuilding = novel.worldBuilding.copy(powerSystem = system)
+        val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
+        viewModelScope.launch {
+            localStorage.saveNovel(updatedNovel)
+            _currentNovel.value = updatedNovel
+        }
     }
     
     fun addLocation(name: String, description: String, type: String = "", significance: String = "") {
@@ -373,15 +388,19 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             type = type,
             significance = significance
         ))
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun deleteLocation(locationId: String) {
         val novel = _currentNovel.value ?: return
         novel.worldBuilding.geography.removeAll { it.id == locationId }
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun addFaction(name: String, description: String, leader: String = "", goals: String = "") {
@@ -392,15 +411,19 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             leader = leader,
             goals = goals
         ))
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun deleteFaction(factionId: String) {
         val novel = _currentNovel.value ?: return
         novel.worldBuilding.factions.removeAll { it.id == factionId }
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun addItem(name: String, description: String, type: String = "", abilities: String = "") {
@@ -411,15 +434,19 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             type = type,
             abilities = abilities
         ))
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun deleteItem(itemId: String) {
         val novel = _currentNovel.value ?: return
         novel.worldBuilding.items.removeAll { it.id == itemId }
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun addSkill(name: String, description: String, type: String = "", requirements: String = "") {
@@ -430,15 +457,19 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             type = type,
             requirements = requirements
         ))
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun deleteSkill(skillId: String) {
         val novel = _currentNovel.value ?: return
         novel.worldBuilding.skills.removeAll { it.id == skillId }
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun addTimelineEvent(title: String, description: String, time: String = "") {
@@ -448,15 +479,19 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             description = description,
             time = time
         ))
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     fun deleteTimelineEvent(eventId: String) {
         val novel = _currentNovel.value ?: return
         novel.worldBuilding.timeline.removeAll { it.id == eventId }
-        localStorage.saveNovel(novel)
-        _currentNovel.value = novel
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
     }
     
     // ========== AI生成功能 ==========
@@ -504,9 +539,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             }
             
             if (result.isNotBlank()) {
-                novel.worldBuilding = novel.worldBuilding.copy(worldBackground = result)
-                localStorage.saveNovel(novel)
-                _currentNovel.value = novel
+                val updatedWorldBuilding = novel.worldBuilding.copy(worldBackground = result)
+                val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
+                localStorage.saveNovel(updatedNovel)
+                _currentNovel.value = updatedNovel
             }
             _isGenerating.value = false
         }
@@ -556,9 +592,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             }
             
             if (result.isNotBlank()) {
-                novel.worldBuilding = novel.worldBuilding.copy(powerSystem = result)
-                localStorage.saveNovel(novel)
-                _currentNovel.value = novel
+                val updatedWorldBuilding = novel.worldBuilding.copy(powerSystem = result)
+                val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
+                localStorage.saveNovel(updatedNovel)
+                _currentNovel.value = updatedNovel
             }
             _isGenerating.value = false
         }

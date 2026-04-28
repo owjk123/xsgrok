@@ -93,7 +93,7 @@ fun ReadingScreen(viewModel: XSGrokViewModel) {
                 Text(
                     text = currentChapter.content,
                     style = MaterialTheme.typography.bodyLarge,
-                    lineHeight = 28.dp
+                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
                 )
                 
                 Spacer(modifier = Modifier.height(32.dp))
