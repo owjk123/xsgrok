@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.window.layout.WindowInfoTracker
 import com.xsgrok.app.ui.XSGrokMainScreen
 import com.xsgrok.app.ui.theme.XSGrokTheme
 
@@ -15,15 +14,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        val windowInfoTracker = WindowInfoTracker.getOrCreate(this)
-        
         setContent {
             XSGrokTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    XSGrokMainScreen(windowInfoTracker = windowInfoTracker)
+                    XSGrokMainScreen()
                 }
             }
         }
