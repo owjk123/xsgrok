@@ -1024,3 +1024,706 @@ enum class Screen {
     Home, Settings, NewNovel, NovelDetail, Characters, Drafts,
     ChapterGeneration, AutoMode, Bookshelf, Reading, WorldBuilding
 }
+
+    // ========== 恢复旧版本方法 ==========
+    
+    fun addCharacterSimple(name: String, description: String, role: String) {
+        addCharacterFull(name, description, role, "", "", "", "")
+    }
+    
+    fun addCharacterFull(
+        name: String, 
+        description: String, 
+        role: String,
+        appearance: String,
+        personality: String,
+        background: String,
+        abilities: String
+    ) {
+        val novel = _currentNovel.value ?: return
+        val character = Character(
+            name = name,
+            description = description,
+            role = role,
+            appearance = appearance,
+            personality = personality,
+            background = background,
+            abilities = abilities
+        )
+        novel.characters.add(character)
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun updateCharacter(
+        characterId: String,
+        name: String,
+        description: String,
+        role: String,
+        appearance: String,
+        personality: String,
+        background: String,
+        abilities: String
+    ) {
+        val novel = _currentNovel.value ?: return
+        val index = novel.characters.indexOfFirst { it.id == characterId }
+        if (index >= 0) {
+            novel.characters[index] = Character(
+                id = characterId,
+                name = name,
+                description = description,
+                role = role,
+                appearance = appearance,
+                personality = personality,
+                background = background,
+                abilities = abilities
+            )
+            viewModelScope.launch {
+                localStorage.saveNovel(novel)
+                _currentNovel.value = novel
+            }
+        }
+    }
+    
+    fun deleteCharacter(characterId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.characters.removeAll { it.id == characterId }
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun generateCharacters() {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            val prompt = """
+                为小说《${novel.title}》设计角色。
+                
+                小说类型：${novel.type}
+                风格：${novel.style}
+                主角：${novel.mainCharacter}
+                
+                请生成3-5个角色，每个角色一行：
+                角色名|角色定位|角色描述
+            """.trimIndent()
+            
+            var result = ""
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "你是专业的小说角色设计师",
+                userPrompt = prompt
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    result += content
+                }
+            }
+            
+            result.lines().filter { it.contains("|") }.forEach { line ->
+                val parts = line.split("|")
+                if (parts.size >= 3) {
+                    novel.characters.add(Character(
+                        name = parts[0].trim(),
+                        role = parts[1].trim(),
+                        description = parts[2].trim()
+                    ))
+                }
+            }
+            
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+            _isGenerating.value = false
+        }
+    }
+    
+    // ========== 世界观管理 ==========
+    
+    fun updateWorldBuilding(worldBackground: String, powerSystem: String, rules: String = "") {
+        val novel = _currentNovel.value ?: return
+        val updatedWorldBuilding = novel.worldBuilding.copy(
+            worldBackground = worldBackground,
+            powerSystem = powerSystem,
+            rules = rules
+        )
+        val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
+        viewModelScope.launch {
+            localStorage.saveNovel(updatedNovel)
+            _currentNovel.value = updatedNovel
+        }
+    }
+    
+    fun updateWorldBackground(background: String) {
+        val novel = _currentNovel.value ?: return
+        val updatedWorldBuilding = novel.worldBuilding.copy(worldBackground = background)
+        val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
+        viewModelScope.launch {
+            localStorage.saveNovel(updatedNovel)
+            _currentNovel.value = updatedNovel
+        }
+    }
+    
+    fun updatePowerSystem(system: String) {
+        val novel = _currentNovel.value ?: return
+        val updatedWorldBuilding = novel.worldBuilding.copy(powerSystem = system)
+        val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
+        viewModelScope.launch {
+            localStorage.saveNovel(updatedNovel)
+            _currentNovel.value = updatedNovel
+        }
+    }
+    
+    fun generateWorldBuilding() {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            val prompt = """
+                为小说《${novel.title}》设计世界观。
+                
+                小说类型：${novel.type}
+                风格：${novel.style}
+                主角：${novel.mainCharacter}
+                
+                请设计：
+                1. 世界背景（历史、地理、文化）
+                2. 力量体系（修炼等级、能力划分）
+                
+                请用中文回答，有创意且逻辑自洽。
+            """.trimIndent()
+            
+            var result = ""
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "你是专业的小说世界观设计师",
+                userPrompt = prompt
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    result += content
+                }
+            }
+            
+            val updatedWorldBuilding = novel.worldBuilding.copy(
+                worldBackground = result
+            )
+            val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
+            localStorage.saveNovel(updatedNovel)
+            _currentNovel.value = updatedNovel
+            _isGenerating.value = false
+        }
+    }
+    
+    fun addLocation(name: String, description: String, type: String = "", significance: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.geography.add(Location(
+            name = name,
+            description = description,
+            type = type,
+            significance = significance
+        ))
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun deleteLocation(locationId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.geography.removeAll { it.id == locationId }
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun generateLocations() {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            val prompt = """
+                为小说《${novel.title}》设计重要地点。
+                
+                世界背景：${novel.worldBuilding.worldBackground}
+                
+                请生成3-5个地点，每个地点一行：
+                地点名|类型|描述
+            """.trimIndent()
+            
+            var result = ""
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "你是专业的小说场景设计师",
+                userPrompt = prompt
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    result += content
+                }
+            }
+            
+            result.lines().filter { it.contains("|") }.forEach { line ->
+                val parts = line.split("|")
+                if (parts.size >= 3) {
+                    novel.worldBuilding.geography.add(Location(
+                        name = parts[0].trim(),
+                        type = parts[1].trim(),
+                        description = parts[2].trim()
+                    ))
+                }
+            }
+            
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+            _isGenerating.value = false
+        }
+    }
+    
+    fun addFaction(name: String, description: String, leader: String = "", goals: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.factions.add(Faction(
+            name = name,
+            description = description,
+            leader = leader,
+            goals = goals
+        ))
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun deleteFaction(factionId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.factions.removeAll { it.id == factionId }
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun generateFactions() {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            val prompt = """
+                为小说《${novel.title}》设计势力组织。
+                
+                世界背景：${novel.worldBuilding.worldBackground}
+                
+                请生成2-4个势力，每个势力一行：
+                势力名|首领|宗旨描述
+            """.trimIndent()
+            
+            var result = ""
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "你是专业的小说世界观设计师",
+                userPrompt = prompt
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    result += content
+                }
+            }
+            
+            result.lines().filter { it.contains("|") }.forEach { line ->
+                val parts = line.split("|")
+                if (parts.size >= 3) {
+                    novel.worldBuilding.factions.add(Faction(
+                        name = parts[0].trim(),
+                        leader = parts[1].trim(),
+                        description = parts[2].trim()
+                    ))
+                }
+            }
+            
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+            _isGenerating.value = false
+        }
+    }
+    
+    fun addItem(name: String, description: String, type: String = "", abilities: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.items.add(GameItem(
+            name = name,
+            description = description,
+            type = type,
+            abilities = abilities
+        ))
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun deleteItem(itemId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.items.removeAll { it.id == itemId }
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun generateItems() {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            val prompt = """
+                为小说《${novel.title}》设计物品装备。
+                
+                世界背景：${novel.worldBuilding.worldBackground}
+                力量体系：${novel.worldBuilding.powerSystem}
+                
+                请生成3-5个物品，每个物品一行：
+                物品名|类型|能力描述
+            """.trimIndent()
+            
+            var result = ""
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "你是专业的小说道具设计师",
+                userPrompt = prompt
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    result += content
+                }
+            }
+            
+            result.lines().filter { it.contains("|") }.forEach { line ->
+                val parts = line.split("|")
+                if (parts.size >= 3) {
+                    novel.worldBuilding.items.add(GameItem(
+                        name = parts[0].trim(),
+                        type = parts[1].trim(),
+                        description = parts[2].trim()
+                    ))
+                }
+            }
+            
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+            _isGenerating.value = false
+        }
+    }
+    
+    fun addSkill(name: String, description: String, type: String = "", requirements: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.skills.add(Skill(
+            name = name,
+            description = description,
+            type = type,
+            requirements = requirements
+        ))
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun deleteSkill(skillId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.skills.removeAll { it.id == skillId }
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun generateSkills() {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            val prompt = """
+                为小说《${novel.title}》设计技能功法。
+                
+                力量体系：${novel.worldBuilding.powerSystem}
+                
+                请生成3-5个技能，每个技能一行：
+                技能名|类型|效果描述
+            """.trimIndent()
+            
+            var result = ""
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "你是专业的小说技能设计师",
+                userPrompt = prompt
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    result += content
+                }
+            }
+            
+            result.lines().filter { it.contains("|") }.forEach { line ->
+                val parts = line.split("|")
+                if (parts.size >= 3) {
+                    novel.worldBuilding.skills.add(Skill(
+                        name = parts[0].trim(),
+                        type = parts[1].trim(),
+                        description = parts[2].trim()
+                    ))
+                }
+            }
+            
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+            _isGenerating.value = false
+        }
+    }
+    
+    fun addTimelineEvent(title: String, description: String, time: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.timeline.add(TimelineEvent(
+            title = title,
+            description = description,
+            time = time
+        ))
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun deleteTimelineEvent(eventId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.timeline.removeAll { it.id == eventId }
+        viewModelScope.launch {
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun generateTimeline() {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            val prompt = """
+                为小说《${novel.title}》设计重要事件时间线。
+                
+                大纲：${novel.outline.take(500)}
+                
+                请生成3-5个关键事件，每个事件一行：
+                时间点|事件名|事件描述
+            """.trimIndent()
+            
+            var result = ""
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "你是专业的小说剧情设计师",
+                userPrompt = prompt
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    result += content
+                }
+            }
+            
+            result.lines().filter { it.contains("|") }.forEach { line ->
+                val parts = line.split("|")
+                if (parts.size >= 3) {
+                    novel.worldBuilding.timeline.add(TimelineEvent(
+                        time = parts[0].trim(),
+                        title = parts[1].trim(),
+                        description = parts[2].trim()
+                    ))
+                }
+            }
+            
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+            _isGenerating.value = false
+        }
+    }
+    
+    fun continueChapter() {
+        val novel = _currentNovel.value ?: return
+        val lastChapter = novel.chapters.lastOrNull() ?: return
+        val config = _uiState.value.apiConfig
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "继续写小说《${novel.title}》，保持风格一致",
+                userPrompt = "请继续以下内容：\n\n${lastChapter.content.takeLast(1000)}"
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    _streamingContent.value += content
+                }
+            }
+            
+            _isGenerating.value = false
+            
+            val newContent = _streamingContent.value
+            if (newContent.isNotBlank()) {
+                val chapterIndex = novel.chapters.indexOfLast { it.id == lastChapter.id }
+                if (chapterIndex >= 0) {
+                    novel.chapters[chapterIndex] = lastChapter.copy(content = newContent)
+                    localStorage.saveNovel(novel)
+                    _currentNovel.value = novel
+                }
+            }
+        }
+    }
+    
+    fun generateChapter(chapterTitle: String) {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            _streamingContent.value = ""
+            
+            val systemPrompt = buildChapterSystemPrompt(novel)
+            val userPrompt = buildChapterUserPrompt(novel, chapterTitle)
+            
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = systemPrompt,
+                userPrompt = userPrompt
+            ).collect { content ->
+                if (content.startsWith("[ERROR]")) {
+                    _errorMessage.value = content
+                } else {
+                    _streamingContent.value += content
+                }
+            }
+            
+            _isGenerating.value = false
+            
+            val newContent = _streamingContent.value
+            if (newContent.isNotBlank()) {
+                val chapter = Chapter(
+                    title = chapterTitle,
+                    content = newContent,
+                    order = novel.chapters.size,
+                    wordCount = newContent.length
+                )
+                novel.chapters.add(chapter)
+                localStorage.saveNovel(novel)
+                _currentNovel.value = novel
+            }
+        }
+    }
+    
+    private fun buildChapterSystemPrompt(novel: Novel): String {
+        return """
+            你是一位资深的中文网络小说作家，正在创作《${novel.title}》。
+            
+            小说类型：${novel.type}
+            写作风格：${novel.style}
+            
+            世界背景：
+            ${novel.worldBuilding.worldBackground}
+            
+            力量体系：
+            ${novel.worldBuilding.powerSystem}
+            
+            大纲：
+            ${novel.outline}
+            
+            【章节要求】
+            1. 纯中文写作
+            2. 文笔流畅，引人入胜
+            3. 每章3000-5000字
+            4. 结尾留悬念
+        """.trimIndent()
+    }
+    
+    private fun buildChapterUserPrompt(novel: Novel, chapterTitle: String): String {
+        val characters = novel.characters.take(3).map { 
+            "${it.name}（${it.role}）：${it.description}" 
+        }.joinToString("\n")
+        
+        val previousContent = novel.chapters.lastOrNull()?.content?.takeLast(500) ?: ""
+        
+        return """
+            请创作章节：$chapterTitle
+            
+            ${if (characters.isNotBlank()) "主要角色：\n$characters" else ""}
+            
+            ${if (previousContent.isNotBlank()) "上一章结尾：\n$previousContent" else ""}
+            
+            请继续创作，保持风格一致。
+        """.trimIndent()
+    }
+}

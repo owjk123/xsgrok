@@ -385,8 +385,8 @@ data class Novel(
         basePrompt = ""
     ),
     val generationConfig: GenerationConfig = GenerationConfig(),
-    val currentSceneId: String? = null,
-    val intimacyProgress: Float = 0f
+    var currentSceneId: String? = null,
+    var intimacyProgress: Float = 0f
 ) {
     fun toJson(): String = Gson().toJson(this)
     
