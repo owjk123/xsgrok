@@ -1,0 +1,3 @@
+-keep class com.xsgrok.app.data.model.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
