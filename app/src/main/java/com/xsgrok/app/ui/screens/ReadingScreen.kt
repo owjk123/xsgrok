@@ -141,6 +141,7 @@ fun ReadingScreen(viewModel: XSGrokViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun ChapterListSheet(
     novel: Novel,
     currentIndex: Int,

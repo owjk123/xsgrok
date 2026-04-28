@@ -577,24 +577,26 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     fun generateFactions() {
-        generateSimpleItems("势力/组织", { name, desc ->
+    fun generateFactions() {
+        val novel = _currentNovel.value ?: return
+        generateSimpleItems("势力/组织") { name, desc ->
             novel.worldBuilding.factions.add(Faction(name = name, description = desc))
-        })
+        }
     }
     
     fun generateItems() {
-        generateSimpleItems("物品/装备", { name, desc ->
+        val novel = _currentNovel.value ?: return
+        generateSimpleItems("物品/装备") { name, desc ->
             novel.worldBuilding.items.add(GameItem(name = name, description = desc))
-        })
+        }
     }
     
     fun generateSkills() {
-        generateSimpleItems("技能/功法", { name, desc ->
+        val novel = _currentNovel.value ?: return
+        generateSimpleItems("技能/功法") { name, desc ->
             novel.worldBuilding.skills.add(Skill(name = name, description = desc))
-        })
+        }
     }
-    
-    fun generateTimeline() {
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
         
@@ -673,7 +675,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             result.lines().filter { it.contains("|") }.forEach { line ->
                 val parts = line.split("|")
                 if (parts.size >= 2) {
-                    adder(novel,parts[0].trim(), parts.getOrNull(1)?.trim() ?: "")
+                    novel.adder(parts[0].trim(), parts.getOrNull(1)?.trim() ?: "")
                 }
             }
             
