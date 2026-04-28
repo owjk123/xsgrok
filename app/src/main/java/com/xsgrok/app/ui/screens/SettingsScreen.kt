@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.xsgrok.app.data.remote.ApiEndpoints
 import com.xsgrok.app.ui.XSGrokViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: XSGrokViewModel) {
     val uiState by viewModel.uiState.collectAsState()
