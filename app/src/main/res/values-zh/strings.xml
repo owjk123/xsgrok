@@ -20,13 +20,18 @@
     <string name="dark_mode">深色模式</string>
     <string name="light_mode">浅色模式</string>
     
-    <!-- 底部导航 -->
+    <!-- 导航 -->
     <string name="home">首页</string>
     <string name="new_label">新建</string>
+    <string name="back">返回</string>
+    <string name="toggle_theme">切换主题</string>
     
-    <!-- 界面标题 -->
+    <!-- 界面 -->
     <string name="novel_detail">小说详情</string>
     <string name="generate_chapter">生成章节</string>
+    <string name="bookshelf">书架</string>
+    <string name="reading">阅读</string>
+    <string name="world_building">世界观</string>
     
     <!-- 小说创建 -->
     <string name="create_novel">创建小说</string>
@@ -41,18 +46,19 @@
     <string name="add">添加</string>
     <string name="cancel">取消</string>
     <string name="add_character">添加角色</string>
+    <string name="edit_character">编辑角色</string>
     <string name="name">名称</string>
     <string name="role">角色</string>
     <string name="description">描述</string>
-    <string name="protagonist">主角</string>
-    <string name="antagonist">反派</string>
-    <string name="supporting">配角</string>
-    <string name="minor">龙套</string>
+    <string name="appearance">外貌</string>
+    <string name="personality">性格</string>
+    <string name="background">背景</string>
+    <string name="abilities">能力</string>
     <string name="no_characters">暂无角色</string>
     <string name="delete_character">删除角色</string>
     <string name="delete_character_confirm">确定要删除角色"%1$s"吗？</string>
     
-    <!-- 章节生成 -->
+    <!-- 章节 -->
     <string name="chapter_title">章节标题</string>
     <string name="enter_chapter_title">请输入章节标题</string>
     <string name="novel_prefix">小说：</string>
@@ -64,11 +70,70 @@
     <string name="generated_content">已生成内容</string>
     <string name="waiting_content">等待内容...</string>
     <string name="export_novel">导出小说</string>
+    <string name="new_chapter">新建章节</string>
+    <string name="no_chapters">暂无章节</string>
+    <string name="chapter_num">第%1$d章</string>
+    <string name="expand">展开</string>
+    <string name="collapse">收起</string>
+    <string name="chapter_list">章节列表</string>
+    <string name="prev_chapter">上一章</string>
+    <string name="next_chapter">下一章</string>
+    <string name="close">关闭</string>
+    <string name="words_count">%1$d字</string>
     
-    <!-- 草稿箱 -->
-    <string name="no_drafts">暂无草稿</string>
+    <!-- 书架 -->
+    <string name="no_books">暂无作品</string>
+    <string name="create_book_hint">创建小说后会显示在这里</string>
+    <string name="total_words">共 %1$d 字</string>
+    
+    <!-- 世界观 -->
+    <string name="world_background">世界背景</string>
+    <string name="world_background_hint">描述世界设定...</string>
+    <string name="power_system">力量体系</string>
+    <string name="power_system_hint">描述力量/等级体系...</string>
+    <string name="world_rules">世界规则</string>
+    <string name="world_rules_hint">这个世界的特殊规则...</string>
+    <string name="locations">地理场景</string>
+    <string name="factions">势力组织</string>
+    <string name="items">物品装备</string>
+    <string name="skills">技能功法</string>
+    <string name="timeline">时间线</string>
+    <string name="add_location">添加地点</string>
+    <string name="location_name">地点名称</string>
+    <string name="location_type">类型</string>
+    <string name="location_type_hint">城市、森林、秘境...</string>
+    <string name="significance">重要性</string>
+    <string name="ai_generate">AI生成</string>
+    <string name="ai_generate_world">AI生成世界设定</string>
+    <string name="edit">编辑</string>
+    <string name="add_item">添加%1$s</string>
+    <string name="add_timeline_event">添加事件</string>
+    <string name="event_title">事件标题</string>
+    <string name="event_time">时间</string>
+    
+    <!-- 全自动模式 -->
+    <string name="auto_mode">全自动</string>
+    <string name="manual_mode">手动模式</string>
+    <string name="enter_one_sentence">输入一句话开始你的小说...</string>
+    <string name="start_auto">开始自动生成</string>
+    <string name="guide_next">引导下一章...</string>
+    <string name="auto_generating">自动生成小说中...</string>
+    <string name="generating_outline">AI正在创作小说大纲和设定...</string>
+    <string name="please_wait">请稍候...</string>
+    <string name="novel_completed">小说创作完成！</string>
+    <string name="read">阅读</string>
+    <string name="edit_settings">编辑设定</string>
+    <string name="create_new_novel">创作新小说</string>
+    <string name="auto_mode_guide_title">全自动模式使用说明</string>
+    <string name="auto_mode_guide_content">1. 输入一句话描述你想写的小说\n2. AI自动生成标题、大纲、世界观设定\n3. AI自动开始创作第一章\n4. 每章写完后可引导下一章走向\n5. 点击角色/世界观按钮管理设定资料</string>
+    
+    <!-- 首页 -->
+    <string name="my_novels">我的小说</string>
+    <string name="no_novels">暂无小说</string>
     <string name="create_first_novel">创建你的第一部小说</string>
-    <string name="created">创建时间</string>
+    <string name="chapters_count">%1$d章</string>
+    <string name="delete_novel">删除小说</string>
+    <string name="delete_novel_confirm">确定要删除小说"%1$s"吗？</string>
     
     <!-- 设置 -->
     <string name="model_selection">模型选择</string>
@@ -81,29 +146,7 @@
     <string name="appearance">外观</string>
     <string name="app_description">AI驱动的小说生成应用</string>
     
-    <!-- 导航 -->
-    <string name="back">返回</string>
-    <string name="toggle_theme">切换主题</string>
-    
-    <!-- 全自动模式 -->
-    <string name="auto_mode">全自动</string>
-    <string name="manual_mode">手动模式</string>
-    <string name="enter_one_sentence">输入一句话开始你的小说...</string>
-    <string name="start_auto">开始自动生成</string>
-    <string name="next_chapter">下一章</string>
-    <string name="guide_next">引导下一章...</string>
-    <string name="auto_generating">自动生成小说中...</string>
-    
-    <!-- 首页 -->
-    <string name="my_novels">我的小说</string>
-    <string name="no_novels">暂无小说</string>
-    <string name="chapters_count">%1$d 章</string>
-    <string name="delete_novel">删除小说</string>
-    <string name="delete_novel_confirm">确定要删除小说"%1$s"吗？</string>
-    
-    <!-- 小说详情 -->
-    <string name="new_chapter">新建章节</string>
-    <string name="no_chapters">暂无章节</string>
-    <string name="chapter_num">第%1$d章</string>
-    <string name="expand">展开</string>
+    <!-- 草稿箱 -->
+    <string name="no_drafts">暂无草稿</string>
+    <string name="created">创建时间</string>
 </resources>

@@ -61,6 +61,12 @@ fun XSGrokMainScreen(
                         onClick = { viewModel.navigateTo(Screen.AutoMode) }
                     )
                     NavigationBarItem(
+                        icon = { Icon(Icons.Default.MenuBook, contentDescription = stringResource(R.string.bookshelf)) },
+                        label = { Text(stringResource(R.string.bookshelf)) },
+                        selected = uiState.currentScreen == Screen.Bookshelf,
+                        onClick = { viewModel.navigateTo(Screen.Bookshelf) }
+                    )
+                    NavigationBarItem(
                         icon = { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_label)) },
                         label = { Text(stringResource(R.string.new_label)) },
                         selected = uiState.currentScreen == Screen.NewNovel,
@@ -99,6 +105,9 @@ private fun MainContent(
         Screen.Drafts -> DraftsScreen(viewModel)
         Screen.ChapterGeneration -> ChapterGenerationScreen(viewModel)
         Screen.AutoMode -> AutoModeScreen(viewModel)
+        Screen.Bookshelf -> BookshelfScreen(viewModel)
+        Screen.Reading -> ReadingScreen(viewModel)
+        Screen.WorldBuilding -> WorldBuildingScreen(viewModel)
     }
 }
 
@@ -113,5 +122,8 @@ private fun getScreenTitle(screen: Screen): String {
         Screen.Drafts -> stringResource(R.string.drafts)
         Screen.ChapterGeneration -> stringResource(R.string.generate_chapter)
         Screen.AutoMode -> stringResource(R.string.auto_mode)
+        Screen.Bookshelf -> stringResource(R.string.bookshelf)
+        Screen.Reading -> stringResource(R.string.reading)
+        Screen.WorldBuilding -> stringResource(R.string.world_building)
     }
 }

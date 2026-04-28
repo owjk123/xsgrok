@@ -12,8 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xsgrok.app.R
+import com.xsgrok.app.ui.Screen
 import com.xsgrok.app.ui.XSGrokViewModel
-import kotlinx.coroutines.delay
+import com.xsgrok.app.ui.screens.AutoModeState
 
 @Composable
 fun AutoModeScreen(viewModel: XSGrokViewModel) {
@@ -85,10 +86,32 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.start_auto))
                 }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // 使用说明
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(R.string.auto_mode_guide_title),
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.auto_mode_guide_content),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
             
             AutoModeState.GENERATING_OUTLINE -> {
-                // 生成大纲中
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -100,15 +123,87 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "AI正在创作小说大纲...",
+                            text = stringResource(R.string.generating_outline),
                             style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = stringResource(R.string.please_wait),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
             
             AutoModeState.GENERATING_CHAPTER -> {
-                // 生成章节中
+                // 显示当前小说信息
+                currentNovel?.let { novel ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = novel.title,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Row(
+                                modifier = Modifier.padding(top = 4.dp)
+                            ) {
+                                AssistChip(
+                                    onClick = {},
+                                    label = { Text(novel.type, style = MaterialTheme.typography.labelSmall) }
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                AssistChip(
+                                    onClick = {},
+                                    label = { Text(novel.style, style = MaterialTheme.typography.labelSmall) }
+                                )
+                            }
+                            Text(
+                                text = stringResource(R.string.chapters_count, novel.chapters.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // 快捷操作按钮
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { 
+                                viewModel.selectNovel(novel.id)
+                                viewModel.navigateTo(Screen.WorldBuilding)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.world_building), maxLines = 1)
+                        }
+                        OutlinedButton(
+                            onClick = { 
+                                viewModel.selectNovel(novel.id)
+                                viewModel.navigateTo(Screen.Characters)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.People, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.characters), maxLines = 1)
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // 生成中的内容
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -151,6 +246,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 if (!isGenerating && streamingContent.isNotBlank()) {
+                    // 下一章引导
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -175,19 +271,35 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    OutlinedButton(
-                        onClick = { viewModel.finishAutoMode() },
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.done))
+                        OutlinedButton(
+                            onClick = { 
+                                viewModel.selectNovel(currentNovel?.id ?: "")
+                                viewModel.navigateTo(Screen.Reading) 
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.MenuBook, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.read))
+                        }
+                        
+                        Button(
+                            onClick = { viewModel.finishAutoMode() },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.done))
+                        }
                     }
                 }
             }
             
             AutoModeState.COMPLETED -> {
-                // 完成
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -206,25 +318,59 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "小说创作完成！",
+                            text = stringResource(R.string.novel_completed),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = { viewModel.navigateTo(com.xsgrok.app.ui.Screen.NovelDetail) }
+                        currentNovel?.let { novel ->
+                            Text(
+                                text = "《${novel.title}》${stringResource(R.string.chapters_count, novel.chapters.size)}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("查看小说")
+                            Button(
+                                onClick = { 
+                                    viewModel.navigateTo(Screen.Reading)
+                                }
+                            ) {
+                                Icon(Icons.Default.MenuBook, contentDescription = null)
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.read))
+                            }
+                            OutlinedButton(
+                                onClick = { 
+                                    viewModel.navigateTo(Screen.WorldBuilding)
+                                }
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = null)
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.edit_settings))
+                            }
                         }
                     }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                OutlinedButton(
+                    onClick = { 
+                        viewModel.navigateTo(Screen.AutoMode)
+                        _autoModeState.value = AutoModeState.IDLE
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.create_new_novel))
                 }
             }
         }
     }
 }
 
-enum class AutoModeState {
-    IDLE,
-    GENERATING_OUTLINE,
-    GENERATING_CHAPTER,
-    COMPLETED
-}
+// 需要在ViewModel中暴露的可变状态
+private val _autoModeState = mutableStateOf(AutoModeState.IDLE)

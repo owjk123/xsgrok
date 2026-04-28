@@ -20,13 +20,18 @@
     <string name="dark_mode">Dark Mode</string>
     <string name="light_mode">Light Mode</string>
     
-    <!-- Bottom Navigation -->
+    <!-- Navigation -->
     <string name="home">Home</string>
     <string name="new_label">New</string>
+    <string name="back">Back</string>
+    <string name="toggle_theme">Toggle Theme</string>
     
-    <!-- Screen Titles -->
+    <!-- Screens -->
     <string name="novel_detail">Novel Detail</string>
     <string name="generate_chapter">Generate Chapter</string>
+    <string name="bookshelf">Bookshelf</string>
+    <string name="reading">Reading</string>
+    <string name="world_building">World Building</string>
     
     <!-- Novel Creation -->
     <string name="create_novel">Create Novel</string>
@@ -41,18 +46,19 @@
     <string name="add">Add</string>
     <string name="cancel">Cancel</string>
     <string name="add_character">Add Character</string>
+    <string name="edit_character">Edit Character</string>
     <string name="name">Name</string>
     <string name="role">Role</string>
     <string name="description">Description</string>
-    <string name="protagonist">Protagonist</string>
-    <string name="antagonist">Antagonist</string>
-    <string name="supporting">Supporting</string>
-    <string name="minor">Minor</string>
+    <string name="appearance">Appearance</string>
+    <string name="personality">Personality</string>
+    <string name="background">Background</string>
+    <string name="abilities">Abilities</string>
     <string name="no_characters">No characters yet</string>
     <string name="delete_character">Delete Character</string>
     <string name="delete_character_confirm">Are you sure you want to delete \"%1$s\"?</string>
     
-    <!-- Chapter Generation -->
+    <!-- Chapter -->
     <string name="chapter_title">Chapter Title</string>
     <string name="enter_chapter_title">Enter chapter title</string>
     <string name="novel_prefix">Novel: </string>
@@ -64,11 +70,70 @@
     <string name="generated_content">Generated Content</string>
     <string name="waiting_content">Waiting for content...</string>
     <string name="export_novel">Export Novel</string>
+    <string name="new_chapter">New Chapter</string>
+    <string name="no_chapters">No chapters yet</string>
+    <string name="chapter_num">Chapter %1$d</string>
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="chapter_list">Chapter List</string>
+    <string name="prev_chapter">Previous</string>
+    <string name="next_chapter">Next</string>
+    <string name="close">Close</string>
+    <string name="words_count">%1$d words</string>
     
-    <!-- Drafts -->
-    <string name="no_drafts">No drafts</string>
+    <!-- Bookshelf -->
+    <string name="no_books">No books yet</string>
+    <string name="create_book_hint">Create a novel to see it here</string>
+    <string name="total_words">Total: %1$d words</string>
+    
+    <!-- World Building -->
+    <string name="world_background">World Background</string>
+    <string name="world_background_hint">Describe the world setting...</string>
+    <string name="power_system">Power System</string>
+    <string name="power_system_hint">Describe the power/level system...</string>
+    <string name="world_rules">World Rules</string>
+    <string name="world_rules_hint">Special rules of this world...</string>
+    <string name="locations">Locations</string>
+    <string name="factions">Factions</string>
+    <string name="items">Items</string>
+    <string name="skills">Skills</string>
+    <string name="timeline">Timeline</string>
+    <string name="add_location">Add Location</string>
+    <string name="location_name">Location Name</string>
+    <string name="location_type">Type</string>
+    <string name="location_type_hint">City, Forest, Dungeon...</string>
+    <string name="significance">Significance</string>
+    <string name="ai_generate">AI Generate</string>
+    <string name="ai_generate_world">AI Generate World Setting</string>
+    <string name="edit">Edit</string>
+    <string name="add_item">Add %1$s</string>
+    <string name="add_timeline_event">Add Timeline Event</string>
+    <string name="event_title">Event Title</string>
+    <string name="event_time">Time</string>
+    
+    <!-- Auto Mode -->
+    <string name="auto_mode">Auto</string>
+    <string name="manual_mode">Manual Mode</string>
+    <string name="enter_one_sentence">Enter one sentence to start your novel...</string>
+    <string name="start_auto">Start Auto Generation</string>
+    <string name="guide_next">Guide next chapter...</string>
+    <string name="auto_generating">Auto generating novel...</string>
+    <string name="generating_outline">AI is creating novel outline and settings...</string>
+    <string name="please_wait">Please wait...</string>
+    <string name="novel_completed">Novel creation completed!</string>
+    <string name="read">Read</string>
+    <string name="edit_settings">Edit Settings</string>
+    <string name="create_new_novel">Create New Novel</string>
+    <string name="auto_mode_guide_title">How to use Auto Mode</string>
+    <string name="auto_mode_guide_content">1. Enter one sentence describing your novel\n2. AI will generate title, outline, and world setting\n3. AI auto-writes the first chapter\n4. After each chapter, you can guide the next one\n5. Click character/world buttons to manage settings</string>
+    
+    <!-- Home -->
+    <string name="my_novels">My Novels</string>
+    <string name="no_novels">No novels yet</string>
     <string name="create_first_novel">Create your first novel to get started</string>
-    <string name="created">Created</string>
+    <string name="chapters_count">%1$d chapters</string>
+    <string name="delete_novel">Delete Novel</string>
+    <string name="delete_novel_confirm">Are you sure you want to delete \"%1$s\"?</string>
     
     <!-- Settings -->
     <string name="model_selection">Model Selection</string>
@@ -81,29 +146,7 @@
     <string name="appearance">Appearance</string>
     <string name="app_description">AI-powered novel generation app</string>
     
-    <!-- Navigation -->
-    <string name="back">Back</string>
-    <string name="toggle_theme">Toggle Theme</string>
-    
-    <!-- Auto Mode -->
-    <string name="auto_mode">Auto</string>
-    <string name="manual_mode">Manual Mode</string>
-    <string name="enter_one_sentence">Enter one sentence to start your novel...</string>
-    <string name="start_auto">Start Auto Generation</string>
-    <string name="next_chapter">Next Chapter</string>
-    <string name="guide_next">Guide next chapter...</string>
-    <string name="auto_generating">Auto generating novel...</string>
-    
-    <!-- Home -->
-    <string name="my_novels">My Novels</string>
-    <string name="no_novels">No novels yet</string>
-    <string name="chapters_count">%1$d chapters</string>
-    <string name="delete_novel">Delete Novel</string>
-    <string name="delete_novel_confirm">Are you sure you want to delete \"%1$s\"?</string>
-    
-    <!-- Novel Detail -->
-    <string name="new_chapter">New Chapter</string>
-    <string name="no_chapters">No chapters yet</string>
-    <string name="chapter_num">Chapter %1$d</string>
-    <string name="expand">Expand</string>
+    <!-- Drafts -->
+    <string name="no_drafts">No drafts</string>
+    <string name="created">Created</string>
 </resources>
