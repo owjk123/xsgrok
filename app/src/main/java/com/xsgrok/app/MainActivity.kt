@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.window.core.layout.WindowWidthSizeClass
 import androidx.window.layout.WindowInfoTracker
 import com.xsgrok.app.ui.XSGrokMainScreen
 import com.xsgrok.app.ui.theme.XSGrokTheme
