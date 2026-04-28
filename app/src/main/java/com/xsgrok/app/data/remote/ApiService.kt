@@ -48,32 +48,26 @@ class ApiService {
                 temperature = temperature
             )
             
-            val jsonBody = gson.toJson(requestBody)
-            
             OutputStreamWriter(connection.outputStream).use { writer ->
-                writer.write(jsonBody)
+                writer.write(gson.toJson(requestBody))
                 writer.flush()
             }
             
-            // 检查响应码
+            // 检查HTTP响应码
             val responseCode = connection.responseCode
             if (responseCode !in 200..299) {
-                // 读取错误流
                 val errorStream = connection.errorStream
-                val errorMessage = if (errorStream != null) {
-                    BufferedReader(InputStreamReader(errorStream)).use { reader ->
-                        reader.readText()
-                    }
+                val errorBody = if (errorStream != null) {
+                    BufferedReader(InputStreamReader(errorStream)).use { it.readText() }
                 } else {
-                    "HTTP $responseCode: ${connection.responseMessage}"
+                    "HTTP $responseCode"
                 }
-                emit("[ERROR] API错误($responseCode): $errorMessage")
+                emit("[ERROR] API请求失败($responseCode): $errorBody")
                 return@flow
             }
             
             BufferedReader(InputStreamReader(connection.inputStream)).use { reader ->
                 var line: String?
-                
                 while (reader.readLine().also { line = it } != null) {
                     line?.let {
                         if (it.startsWith("data: ")) {
@@ -86,18 +80,7 @@ class ApiService {
                                         emit(content)
                                     }
                                 } catch (e: Exception) {
-                                    // 尝试解析错误响应
-                                    if (data.contains("error", ignoreCase = true)) {
-                                        try {
-                                            val errorResp = gson.fromJson(data, ErrorResponse::class.java)
-                                            if (!errorResp.error?.message.isNullOrBlank()) {
-                                                emit("[ERROR] ${errorResp.error.message}")
-                                                return@flow
-                                            }
-                                        } catch (e2: Exception) {
-                                            // 忽略解析错误
-                                        }
-                                    }
+                                    // 忽略解析错误
                                 }
                             }
                         }
@@ -105,22 +88,11 @@ class ApiService {
                 }
             }
         } catch (e: Exception) {
-            emit("[ERROR] ${e.javaClass.simpleName}: ${e.message}")
+            emit("[ERROR] 网络错误: ${e.message}")
         } finally {
             connection?.disconnect()
         }
     }.flowOn(Dispatchers.IO)
-    
-    // 错误响应模型
-    data class ErrorResponse(
-        val error: ErrorDetail?
-    )
-    
-    data class ErrorDetail(
-        val message: String?,
-        val type: String?,
-        val code: String?
-    )
     
     data class StreamResponse(
         val choices: List<StreamChoice>?
