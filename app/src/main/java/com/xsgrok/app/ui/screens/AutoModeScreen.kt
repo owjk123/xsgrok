@@ -21,9 +21,15 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
     val streamingContent by viewModel.streamingContent.collectAsState()
     val isGenerating by viewModel.isGenerating.collectAsState()
     val autoModeState by viewModel.autoModeState.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
     
     var userPrompt by remember { mutableStateOf("") }
     var nextChapterGuide by remember { mutableStateOf("") }
+    
+    // 显示错误提示
+    LaunchedEffect(errorMessage) {
+        // 错误会自动显示在 UI 中
+    }
     
     Column(
         modifier = Modifier
@@ -51,6 +57,42 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+            }
+        }
+        
+        // 错误提示
+        errorMessage?.let { error ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Error,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { viewModel.clearError() }) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "关闭",
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
             }
         }
         
@@ -127,6 +169,18 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        // 添加取消按钮
+                        OutlinedButton(
+                            onClick = { 
+                                viewModel.stopGeneration()
+                                viewModel.resetAutoMode()
+                            }
+                        ) {
+                            Icon(Icons.Default.Cancel, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("取消")
+                        }
                     }
                 }
             }
@@ -237,6 +291,47 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
+                
+                // 如果正在生成，显示停止按钮
+                if (isGenerating) {
+                    OutlinedButton(
+                        onClick = { 
+                            viewModel.stopGeneration()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Stop, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("停止生成")
+                    }
+                }
+                
+                // 如果生成失败或停止，显示重试按钮
+                if (!isGenerating && streamingContent.isBlank() && errorMessage != null) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { viewModel.resetAutoMode() },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("重新开始")
+                        }
+                        Button(
+                            onClick = { 
+                                currentNovel?.let { viewModel.continueAutoMode("") }
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("重试生成")
+                        }
+                    }
+                }
                 
                 if (!isGenerating && streamingContent.isNotBlank()) {
                     Row(

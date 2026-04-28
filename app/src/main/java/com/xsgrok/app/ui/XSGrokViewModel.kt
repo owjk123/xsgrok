@@ -775,92 +775,127 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         }
         
         generationJob = viewModelScope.launch {
-            _autoModeState.value = AutoModeState.GENERATING_OUTLINE
-            
-            // 步骤1: 生成小说信息和大纲
-            var outlineResult = ""
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = "你是一个专业的小说创作顾问",
-                userPrompt = """
-                    用户想写：$userPrompt
-                    
-                    请生成完整的小说设定：
-                    1. 小说标题
-                    2. 类型（玄幻/都市/科幻/悬疑等）
-                    3. 风格（热血/轻松/黑暗等）
-                    4. 主角设定
-                    5. 详细大纲（500字左右）
-                    6. 世界背景
-                    7. 力量体系
-                    
-                    请严格按JSON格式输出：
-                    {
-                        "title": "标题",
-                        "type": "类型",
-                        "style": "风格",
-                        "mainCharacter": "主角设定",
-                        "outline": "详细大纲",
-                        "worldBackground": "世界背景",
-                        "powerSystem": "力量体系"
+            try {
+                _autoModeState.value = AutoModeState.GENERATING_OUTLINE
+                
+                // 步骤1: 生成小说信息和大纲
+                var outlineResult = ""
+                var outlineError: String? = null
+                
+                apiService.generateContent(
+                    apiKey = config.apiKey,
+                    endpoint = config.endpoint,
+                    model = config.model,
+                    systemPrompt = "你是一个专业的小说创作顾问",
+                    userPrompt = """
+                        用户想写：$userPrompt
+                        
+                        请生成完整的小说设定：
+                        1. 小说标题
+                        2. 类型（玄幻/都市/科幻/悬疑等）
+                        3. 风格（热血/轻松/黑暗等）
+                        4. 主角设定
+                        5. 详细大纲（500字左右）
+                        6. 世界背景
+                        7. 力量体系
+                        
+                        请严格按JSON格式输出：
+                        {
+                            "title": "标题",
+                            "type": "类型",
+                            "style": "风格",
+                            "mainCharacter": "主角设定",
+                            "outline": "详细大纲",
+                            "worldBackground": "世界背景",
+                            "powerSystem": "力量体系"
+                        }
+                    """.trimIndent()
+                ).collect { content ->
+                    if (content.startsWith("[ERROR]")) {
+                        outlineError = content
+                    } else {
+                        outlineResult += content
                     }
-                """.trimIndent()
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    outlineResult += content
                 }
-            }
-            
-            // 解析并创建小说
-            val novel = Novel(
-                title = extractField(outlineResult, "title") ?: "未命名小说",
-                type = extractField(outlineResult, "type") ?: "玄幻",
-                style = extractField(outlineResult, "style") ?: "热血",
-                mainCharacter = extractField(outlineResult, "mainCharacter") ?: "主角",
-                outline = extractField(outlineResult, "outline") ?: outlineResult,
-                worldBuilding = WorldBuilding(
-                    worldBackground = extractField(outlineResult, "worldBackground") ?: "",
-                    powerSystem = extractField(outlineResult, "powerSystem") ?: ""
-                )
-            )
-            
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-            
-            // 步骤2: 生成第一章
-            _autoModeState.value = AutoModeState.GENERATING_CHAPTER
-            _isGenerating.value = true
-            _streamingContent.value = ""
-            
-            val chapterPrompt = buildAutoChapterPrompt(novel, 1, "")
-            
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = buildAutoChapterSystemPrompt(novel),
-                userPrompt = chapterPrompt
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    _streamingContent.value += content
+                
+                // 检查大纲生成是否成功
+                if (!outlineError.isNullOrEmpty()) {
+                    _errorMessage.value = "大纲生成失败: $outlineError"
+                    _autoModeState.value = AutoModeState.IDLE
+                    return@launch
                 }
-            }
-            
-            _isGenerating.value = false
-            
-            val chapterContent = _streamingContent.value
-            if (chapterContent.isNotBlank()) {
-                val chapter = Chapter(
-                    title = "第一章",
-                    content = chapterContent,
-                    order = 0,
-                    wordCount = chapterContent.length
+                
+                if (outlineResult.isBlank()) {
+                    _errorMessage.value = "大纲生成失败，请检查网络连接"
+                    _autoModeState.value = AutoModeState.IDLE
+                    return@launch
+                }
+                
+                // 解析并创建小说
+                val novel = Novel(
+                    title = extractField(outlineResult, "title") ?: "未命名小说",
+                    type = extractField(outlineResult, "type") ?: "玄幻",
+                    style = extractField(outlineResult, "style") ?: "热血",
+                    mainCharacter = extractField(outlineResult, "mainCharacter") ?: "主角",
+                    outline = extractField(outlineResult, "outline") ?: outlineResult,
+                    worldBuilding = WorldBuilding(
+                        worldBackground = extractField(outlineResult, "worldBackground") ?: "",
+                        powerSystem = extractField(outlineResult, "powerSystem") ?: ""
+                    )
                 )
-                novel.chapters.add(chapter)
+                
                 localStorage.saveNovel(novel)
                 _currentNovel.value = novel
+                
+                // 步骤2: 生成第一章
+                _autoModeState.value = AutoModeState.GENERATING_CHAPTER
+                _isGenerating.value = true
+                _streamingContent.value = ""
+                
+                var chapterError: String? = null
+                
+                val chapterPrompt = buildAutoChapterPrompt(novel, 1, "")
+                
+                apiService.generateContent(
+                    apiKey = config.apiKey,
+                    endpoint = config.endpoint,
+                    model = config.model,
+                    systemPrompt = buildAutoChapterSystemPrompt(novel),
+                    userPrompt = chapterPrompt
+                ).collect { content ->
+                    if (content.startsWith("[ERROR]")) {
+                        chapterError = content
+                    } else {
+                        _streamingContent.value += content
+                    }
+                }
+                
+                _isGenerating.value = false
+                
+                if (!chapterError.isNullOrEmpty()) {
+                    _errorMessage.value = "章节生成失败: $chapterError"
+                    // 保持当前状态让用户可以重试
+                    return@launch
+                }
+                
+                val chapterContent = _streamingContent.value
+                if (chapterContent.isNotBlank()) {
+                    val chapter = Chapter(
+                        title = "第一章",
+                        content = chapterContent,
+                        order = 0,
+                        wordCount = chapterContent.length
+                    )
+                    novel.chapters.add(chapter)
+                    localStorage.saveNovel(novel)
+                    _currentNovel.value = novel
+                } else {
+                    _errorMessage.value = "章节内容为空，请重试"
+                }
+            } catch (e: Exception) {
+                _isGenerating.value = false
+                _errorMessage.value = "生成失败: ${e.message}"
+                _autoModeState.value = AutoModeState.IDLE
             }
         }
     }
@@ -870,48 +905,64 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         val config = _uiState.value.apiConfig
         
         generationJob = viewModelScope.launch {
-            _autoModeState.value = AutoModeState.GENERATING_CHAPTER
-            _isGenerating.value = true
-            _streamingContent.value = ""
-            
-            val chapterNum = novel.chapters.size + 1
-            val lastChapter = novel.chapters.lastOrNull()
-            
-            val prompt = """
-                请创作第${chapterNum}章。
+            try {
+                _autoModeState.value = AutoModeState.GENERATING_CHAPTER
+                _isGenerating.value = true
+                _streamingContent.value = ""
                 
-                ${if (guide.isNotBlank()) "用户引导：$guide" else ""}
+                val chapterNum = novel.chapters.size + 1
+                val lastChapter = novel.chapters.lastOrNull()
                 
-                ${if (lastChapter != null) "上一章结尾：\n${lastChapter.content.takeLast(500)}" else ""}
+                val prompt = """
+                    请创作第${chapterNum}章。
+                    
+                    ${if (guide.isNotBlank()) "用户引导：$guide" else ""}
+                    
+                    ${if (lastChapter != null) "上一章结尾：\n${lastChapter.content.takeLast(500)}" else ""}
+                    
+                    请继续推进故事，保持风格一致。
+                """.trimIndent()
                 
-                请继续推进故事，保持风格一致。
-            """.trimIndent()
-            
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = buildAutoChapterSystemPrompt(novel),
-                userPrompt = prompt
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    _streamingContent.value += content
+                var chapterError: String? = null
+                
+                apiService.generateContent(
+                    apiKey = config.apiKey,
+                    endpoint = config.endpoint,
+                    model = config.model,
+                    systemPrompt = buildAutoChapterSystemPrompt(novel),
+                    userPrompt = prompt
+                ).collect { content ->
+                    if (content.startsWith("[ERROR]")) {
+                        chapterError = content
+                    } else {
+                        _streamingContent.value += content
+                    }
                 }
-            }
-            
-            _isGenerating.value = false
-            
-            val chapterContent = _streamingContent.value
-            if (chapterContent.isNotBlank()) {
-                val chapter = Chapter(
-                    title = "第${chapterNum}章",
-                    content = chapterContent,
-                    order = novel.chapters.size,
-                    wordCount = chapterContent.length
-                )
-                novel.chapters.add(chapter)
-                localStorage.saveNovel(novel)
-                _currentNovel.value = novel
+                
+                _isGenerating.value = false
+                
+                if (!chapterError.isNullOrEmpty()) {
+                    _errorMessage.value = "章节生成失败: $chapterError"
+                    return@launch
+                }
+                
+                val chapterContent = _streamingContent.value
+                if (chapterContent.isNotBlank()) {
+                    val chapter = Chapter(
+                        title = "第${chapterNum}章",
+                        content = chapterContent,
+                        order = novel.chapters.size,
+                        wordCount = chapterContent.length
+                    )
+                    novel.chapters.add(chapter)
+                    localStorage.saveNovel(novel)
+                    _currentNovel.value = novel
+                } else {
+                    _errorMessage.value = "章节内容为空，请重试"
+                }
+            } catch (e: Exception) {
+                _isGenerating.value = false
+                _errorMessage.value = "生成失败: ${e.message}"
             }
         }
     }
