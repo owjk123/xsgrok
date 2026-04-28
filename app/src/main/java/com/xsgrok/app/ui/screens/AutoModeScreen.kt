@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import com.xsgrok.app.R
 import com.xsgrok.app.ui.Screen
 import com.xsgrok.app.ui.XSGrokViewModel
-import com.xsgrok.app.ui.screens.AutoModeState
 
 @Composable
 fun AutoModeScreen(viewModel: XSGrokViewModel) {
@@ -31,7 +30,6 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 模式指示器
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -59,8 +57,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
         
         when (autoModeState) {
-            AutoModeState.IDLE -> {
-                // 初始状态：输入一句话
+            com.xsgrok.app.ui.screens.AutoModeState.IDLE -> {
                 OutlinedTextField(
                     value = userPrompt,
                     onValueChange = { userPrompt = it },
@@ -89,7 +86,6 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // 使用说明
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -111,7 +107,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 }
             }
             
-            AutoModeState.GENERATING_OUTLINE -> {
+            com.xsgrok.app.ui.screens.AutoModeState.GENERATING_OUTLINE -> {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -135,8 +131,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 }
             }
             
-            AutoModeState.GENERATING_CHAPTER -> {
-                // 显示当前小说信息
+            com.xsgrok.app.ui.screens.AutoModeState.GENERATING_CHAPTER -> {
                 currentNovel?.let { novel ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -171,7 +166,6 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    // 快捷操作按钮
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -203,7 +197,6 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // 生成中的内容
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -246,7 +239,6 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 if (!isGenerating && streamingContent.isNotBlank()) {
-                    // 下一章引导
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -277,7 +269,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                     ) {
                         OutlinedButton(
                             onClick = { 
-                                viewModel.selectNovel(currentNovel?.id ?: "")
+                                currentNovel?.let { viewModel.selectNovel(it.id) }
                                 viewModel.navigateTo(Screen.Reading) 
                             },
                             modifier = Modifier.weight(1f)
@@ -299,7 +291,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 }
             }
             
-            AutoModeState.COMPLETED -> {
+            com.xsgrok.app.ui.screens.AutoModeState.COMPLETED -> {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -332,20 +324,12 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Button(
-                                onClick = { 
-                                    viewModel.navigateTo(Screen.Reading)
-                                }
-                            ) {
+                            Button(onClick = { viewModel.navigateTo(Screen.Reading) }) {
                                 Icon(Icons.Default.MenuBook, contentDescription = null)
                                 Spacer(Modifier.width(4.dp))
                                 Text(stringResource(R.string.read))
                             }
-                            OutlinedButton(
-                                onClick = { 
-                                    viewModel.navigateTo(Screen.WorldBuilding)
-                                }
-                            ) {
+                            OutlinedButton(onClick = { viewModel.navigateTo(Screen.WorldBuilding) }) {
                                 Icon(Icons.Default.Edit, contentDescription = null)
                                 Spacer(Modifier.width(4.dp))
                                 Text(stringResource(R.string.edit_settings))
@@ -358,8 +342,8 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 
                 OutlinedButton(
                     onClick = { 
+                        viewModel.resetAutoMode()
                         viewModel.navigateTo(Screen.AutoMode)
-                        _autoModeState.value = AutoModeState.IDLE
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -371,6 +355,3 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
         }
     }
 }
-
-// 需要在ViewModel中暴露的可变状态
-private val _autoModeState = mutableStateOf(AutoModeState.IDLE)

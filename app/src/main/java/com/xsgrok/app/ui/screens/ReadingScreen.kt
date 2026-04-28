@@ -2,6 +2,7 @@ package com.xsgrok.app.ui.screens
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,7 +18,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.xsgrok.app.R
-import com.xsgrok.app.data.model.Chapter
 import com.xsgrok.app.data.model.Novel
 import com.xsgrok.app.ui.Screen
 import com.xsgrok.app.ui.XSGrokViewModel
@@ -47,7 +47,6 @@ fun ReadingScreen(viewModel: XSGrokViewModel) {
         val currentChapter = sortedChapters.getOrNull(currentChapterIndex) ?: sortedChapters.first()
         
         Column(modifier = Modifier.fillMaxSize()) {
-            // 顶部信息栏
             TopAppBar(
                 title = { 
                     Column {
@@ -79,15 +78,12 @@ fun ReadingScreen(viewModel: XSGrokViewModel) {
                     }) {
                         Icon(Icons.Default.Public, contentDescription = stringResource(R.string.world_building))
                     }
-                    IconButton(onClick = { 
-                        exportNovel(context, novel)
-                    }) {
+                    IconButton(onClick = { exportNovel(context, novel) }) {
                         Icon(Icons.Default.Share, contentDescription = stringResource(R.string.export))
                     }
                 }
             )
             
-            // 章节内容
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -102,15 +98,12 @@ fun ReadingScreen(viewModel: XSGrokViewModel) {
                 
                 Spacer(modifier = Modifier.height(32.dp))
                 
-                // 章节导航
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     if (currentChapterIndex > 0) {
-                        OutlinedButton(
-                            onClick = { currentChapterIndex-- }
-                        ) {
+                        OutlinedButton(onClick = { currentChapterIndex-- }) {
                             Icon(Icons.Default.ArrowBack, contentDescription = null)
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.prev_chapter))
@@ -120,9 +113,7 @@ fun ReadingScreen(viewModel: XSGrokViewModel) {
                     }
                     
                     if (currentChapterIndex < sortedChapters.size - 1) {
-                        Button(
-                            onClick = { currentChapterIndex++ }
-                        ) {
+                        Button(onClick = { currentChapterIndex++ }) {
                             Text(stringResource(R.string.next_chapter))
                             Spacer(Modifier.width(4.dp))
                             Icon(Icons.Default.ArrowForward, contentDescription = null)
@@ -134,9 +125,8 @@ fun ReadingScreen(viewModel: XSGrokViewModel) {
             }
         }
         
-        // 章节列表弹窗
         if (showChapterList) {
-            ChapterListDrawer(
+            ChapterListSheet(
                 novel = novel,
                 currentIndex = currentChapterIndex,
                 onSelect = { index ->
@@ -149,8 +139,9 @@ fun ReadingScreen(viewModel: XSGrokViewModel) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChapterListDrawer(
+fun ChapterListSheet(
     novel: Novel,
     currentIndex: Int,
     onSelect: (Int) -> Unit,
@@ -158,26 +149,38 @@ fun ChapterListDrawer(
 ) {
     val sortedChapters = novel.chapters.sortedBy { it.order }
     
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.chapter_list)) },
-        text = {
-            LazyColumn(
-                modifier = Modifier.height(400.dp)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.chapter_list),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                items(sortedChapters.size) { index ->
-                    val chapter = sortedChapters[index]
+                sortedChapters.forEachIndexed { index, chapter ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = 4.dp)
+                            .clickable { onSelect(index) },
                         colors = CardDefaults.cardColors(
                             containerColor = if (index == currentIndex) 
                                 MaterialTheme.colorScheme.primaryContainer 
                             else 
                                 MaterialTheme.colorScheme.surface
-                        ),
-                        onClick = { onSelect(index) }
+                        )
                     ) {
                         Row(
                             modifier = Modifier
@@ -199,13 +202,8 @@ fun ChapterListDrawer(
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.close))
-            }
         }
-    )
+    }
 }
 
 private fun exportNovel(context: Context, novel: Novel) {

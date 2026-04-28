@@ -838,6 +838,12 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     fun finishAutoMode() {
         _autoModeState.value = AutoModeState.COMPLETED
     }
+
+    fun resetAutoMode() {
+        _autoModeState.value = AutoModeState.IDLE
+        _streamingContent.value = ""
+    }
+    }
     
     // ========== 辅助方法 ==========
     
