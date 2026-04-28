@@ -18,12 +18,20 @@ import java.util.concurrent.TimeUnit
 class ApiService {
     private val gson = Gson()
     
+    /**
+     * 生成内容 - 支持动态temperature参数
+     * @param temperature 温度参数，控制输出的随机性
+     *         - 开场章 0.85~0.95：高创意，多样化表达
+     *         - 推进章 0.7~0.8：平衡创意与连贯
+     *         - 收束章 0.6~0.7：更确定性，确保结局完整
+     */
     fun generateContent(
         apiKey: String,
         endpoint: String,
         model: String,
         systemPrompt: String,
-        userPrompt: String
+        userPrompt: String,
+        temperature: Float = 0.75f  // P0新增：动态temperature
     ): Flow<String> = flow {
         try {
             val url = URL("$endpoint/chat/completions")
@@ -41,7 +49,8 @@ class ApiService {
                     ChatMessage(role = "system", content = systemPrompt),
                     ChatMessage(role = "user", content = userPrompt)
                 ),
-                stream = true
+                stream = true,
+                temperature = temperature  // P0：传递temperature参数
             )
             
             OutputStreamWriter(connection.outputStream).use { writer ->

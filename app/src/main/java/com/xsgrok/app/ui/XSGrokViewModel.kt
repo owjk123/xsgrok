@@ -45,6 +45,130 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     
     private var generationJob: Job? = null
     
+
+    // ========== P0功能：温度计算和去AI味提示 ==========
+    
+    /**
+     * 根据章节进度计算动态temperature
+     * 开场章 0.85~0.95：高创意
+     * 推进章 0.7~0.8：平衡
+     * 收束章 0.6~0.7：确定性
+     */
+    private fun calculateTemperature(chapterNum: Int, totalNodes: Int): Float {
+        if (totalNodes <= 0) return 0.75f
+        
+        val progress = chapterNum.toFloat() / totalNodes
+        return when {
+            progress < 0.2f -> 0.9f   // 开场
+            progress < 0.8f -> 0.75f  // 推进
+            else -> 0.65f             // 收束
+        }
+    }
+    
+    /**
+     * 获取去AI味的写作提示
+     */
+    private fun getAntiAIWritingHints(): String {
+        return """
+【写作要求（严格遵守）】
+1. 段落长度必须有变化：每章至少一个长段落（8句以上），多个极短段落（1-2句）
+2. 禁止句式重复：同一段落内相同句式结构不超过2次
+3. 禁止心理总结：用具体动作、细节代替
+   - 错误：「他很愤怒」
+   - 正确：「把烟头摁进掌心，烟灰簌簌落下」
+4. 对话要自然：夹杂语气词、打断、省略，不要工整的一问一答
+5. 场景描写要粗糙：不要面面俱到，留白给读者想象
+""".trimIndent()
+    }
+    
+    /**
+     * 生成关键节点（8~12个）
+     */
+    private fun parseKeyNodesFromOutline(outline: String): List<KeyNode> {
+        val nodes = mutableListOf<KeyNode>()
+        val lines = outline.lines().filter { it.isNotBlank() }
+        
+        for ((index, line) in lines.withIndex()) {
+            val trimmed = line.trim()
+            // 尝试解析节点（格式：1. 标题 或 【标题】 等）
+            val title = when {
+                trimmed.matches(Regex("^\d+[.、].+")) -> trimmed.replace(Regex("^\d+[.、]\s*"), "")
+                trimmed.startsWith("【") && trimmed.endsWith("】") -> trimmed.drop(1).dropLast(1)
+                trimmed.startsWith("[") && trimmed.endsWith("]") -> trimmed.drop(1).dropLast(1)
+                trimmed.length > 5 && index < 15 -> trimmed.take(50)
+                else -> null
+            }
+            
+            if (title != null && title.length >= 2) {
+                nodes.add(KeyNode(
+                    title = title,
+                    description = trimmed,
+                    targetChapter = (index + 1) * 2  // 预估每2章一个节点
+                ))
+            }
+            
+            if (nodes.size >= 10) break  // 最多10个节点
+        }
+        
+        // 如果解析失败，生成默认节点
+        if (nodes.isEmpty()) {
+            listOf("开篇", "矛盾初现", "危机升级", "转折点", "高潮", "结局").forEachIndexed { i, title ->
+                nodes.add(KeyNode(title = title, description = title, targetChapter = (i + 1) * 2))
+            }
+        }
+        
+        return nodes
+    }
+    
+    /**
+     * 从生成内容中提取伏笔
+     */
+    private fun extractForeshadowings(content: String, chapterNum: Int): List<Foreshadowing> {
+        val foreshadowings = mutableListOf<Foreshadowing>()
+        // 简单的伏笔提取逻辑：查找括号内容或特定标记
+        val patterns = listOf(
+            Regex("【(.+?)】"),
+            Regex("（(.+?)）"),
+            Regex("\[(.+?)\]")
+        )
+        
+        for (pattern in patterns) {
+            pattern.findAll(content).forEach { match ->
+                val hint = match.groupValues[1]
+                if (hint.length in 4..30) {
+                    foreshadowings.add(Foreshadowing(
+                        content = hint,
+                        plantedChapter = chapterNum,
+                        hint = "待回收"
+                    ))
+                }
+            }
+        }
+        
+        return foreshadowings
+    }
+    
+    // ========== 伏笔管理 ==========
+    
+    fun resolveForeshadowing(foreshadowingId: String, chapterNum: Int) {
+        val novel = _currentNovel.value ?: return
+        
+        val index = novel.foreshadowings.indexOfFirst { it.id == foreshadowingId }
+        if (index >= 0) {
+            novel.foreshadowings[index] = novel.foreshadowings[index].copy(
+                isResolved = true,
+                resolvedChapter = chapterNum
+            )
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun getForeshadowingStats(): ForeshadowingStats {
+        return _currentNovel.value?.getForeshadowingStats() ?: ForeshadowingStats(0, 0, 0, 0f)
+    }
+    
+
     init {
         loadApiConfig()
         loadNovels()
@@ -805,9 +929,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                         5. 详细大纲（500字左右，包含开头、发展、高潮、结局）
                         6. 世界背景（世界观、历史、地理等）
                         7. 力量体系（修炼等级、能力划分等）
+                        8. 关键节点（8-10个故事关键转折点，每个一行，格式：节点标题|节点描述）
                         
                         请严格按JSON格式输出，不要添加任何其他内容：
-                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"详细大纲","worldBackground":"世界背景","powerSystem":"力量体系"}
+                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"详细大纲\n关键节点：\n1. 开篇\n2. 矛盾初现\n3. 危机升级...","worldBackground":"世界背景","powerSystem":"力量体系"}
                     """.trimIndent()
                 ).collect { content ->
                     if (content.startsWith("[ERROR]")) {
@@ -832,16 +957,20 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 
                 // 解析并创建待审阅的小说
+                val outlineText = extractField(outlineResult, "outline") ?: outlineResult
+                val keyNodes = parseKeyNodesFromOutline(outlineText)
+                
                 val novel = Novel(
                     title = extractField(outlineResult, "title") ?: "未命名小说",
                     type = extractField(outlineResult, "type") ?: "玄幻",
                     style = extractField(outlineResult, "style") ?: "热血",
                     mainCharacter = extractField(outlineResult, "mainCharacter") ?: "主角",
-                    outline = extractField(outlineResult, "outline") ?: outlineResult,
+                    outline = outlineText,
                     worldBuilding = WorldBuilding(
                         worldBackground = extractField(outlineResult, "worldBackground") ?: "",
                         powerSystem = extractField(outlineResult, "powerSystem") ?: ""
-                    )
+                    ),
+                    keyNodes = keyNodes.toMutableList()  // P0：添加关键节点
                 )
                 
                 // 保存到待审阅状态，进入审阅阶段
@@ -905,12 +1034,16 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 
                 val chapterPrompt = buildAutoChapterPrompt(novel, 1, "")
                 
+                // P0：计算动态temperature
+                val temperature = calculateTemperature(1, novel.keyNodes.size)
+                
                 apiService.generateContent(
                     apiKey = config.apiKey,
                     endpoint = config.endpoint,
                     model = config.model,
-                    systemPrompt = buildAutoChapterSystemPrompt(novel),
-                    userPrompt = chapterPrompt
+                    systemPrompt = buildAutoChapterSystemPrompt(novel, 1),
+                    userPrompt = chapterPrompt,
+                    temperature = temperature
                 ).collect { content ->
                     if (content.startsWith("[ERROR]")) {
                         chapterError = content
@@ -972,12 +1105,16 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 
                 var chapterError: String? = null
                 
+                // P0：计算动态temperature
+                val temperature = calculateTemperature(chapterNum, novel.keyNodes.size)
+                
                 apiService.generateContent(
                     apiKey = config.apiKey,
                     endpoint = config.endpoint,
                     model = config.model,
-                    systemPrompt = buildAutoChapterSystemPrompt(novel),
-                    userPrompt = prompt
+                    systemPrompt = buildAutoChapterSystemPrompt(novel, chapterNum),
+                    userPrompt = prompt,
+                    temperature = temperature
                 ).collect { content ->
                     if (content.startsWith("[ERROR]")) {
                         chapterError = content
@@ -1078,27 +1215,60 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         """.trimIndent()
     }
     
-    private fun buildAutoChapterSystemPrompt(novel: Novel): String {
+    private fun buildAutoChapterSystemPrompt(novel: Novel, chapterNum: Int = 1): String {
+        // P0：计算进度信息
+        val progressInfo = novel.getProgressInfo(chapterNum)
+        val unresolvedForeshadowings = novel.getUnresolvedForeshadowings()
+        val isConvergence = novel.isConvergenceMode()
+        val temperature = calculateTemperature(chapterNum, novel.keyNodes.size)
+        
+        // P0：进度提示
+        val progressHint = if (novel.keyNodes.isNotEmpty()) {
+            """
+【当前进度】
+${progressInfo.toModelHint()}
+阶段：${if (chapterNum.toFloat() / novel.keyNodes.size < 0.2f) "开场阶段（高创意）"
+                  else if (chapterNum.toFloat() / novel.keyNodes.size < 0.8f) "推进阶段（稳健发展）"
+                  else "收束阶段（即将结局）"}
+Temperature: $temperature
+"""
+        } else ""
+        
+        // P0：伏笔提示
+        val foreshadowingHint = if (unresolvedForeshadowings.isNotEmpty()) {
+            """
+【未回收伏笔（需择机回收）】
+${unresolvedForeshadowings.take(5).mapIndexed { i, f -> "${i + 1}. ${f.content}（第${f.plantedChapter}章埋下）" }.joinToString("\n")}
+${if (isConvergence) "\n⚠️ 收束模式：必须在本章回收至少一条伏笔！" else ""}
+"""
+        } else ""
+        
         return """
-            你是一位资深的中文网络小说作家，正在创作《${novel.title}》。
-            
-            小说类型：${novel.type}
-            写作风格：${novel.style}
-            
-            世界背景：
-            ${novel.worldBuilding.worldBackground}
-            
-            力量体系：
-            ${novel.worldBuilding.powerSystem}
-            
-            大纲：
-            ${novel.outline}
-            
-            写作要求：
-            1. 纯中文写作
-            2. 文笔流畅，引人入胜
-            3. 每章3000-5000字
-            4. 结尾留悬念
+你是一位资深的中文网络小说作家，正在创作《${novel.title}》。
+
+小说类型：${novel.type}
+写作风格：${novel.style}
+
+世界背景：
+${novel.worldBuilding.worldBackground}
+
+力量体系：
+${novel.worldBuilding.powerSystem}
+
+大纲：
+${novel.outline}
+
+$progressHint
+$foreshadowingHint
+
+${getAntiAIWritingHints()}
+
+【章节要求】
+1. 纯中文写作
+2. 文笔流畅，引人入胜
+3. 每章3000-5000字
+4. 结尾留悬念
+${if (isConvergence) "5. 【重要】本章必须推进主线结局，回收至少一条伏笔" else ""}
         """.trimIndent()
     }
     
