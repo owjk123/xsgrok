@@ -7,23 +7,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.concurrent.TimeUnit
 
 class ApiService {
     private val gson = Gson()
     
     /**
      * 生成内容 - 支持动态temperature参数
-     * @param temperature 温度参数，控制输出的随机性
-     *         - 开场章 0.85~0.95：高创意，多样化表达
-     *         - 推进章 0.7~0.8：平衡创意与连贯
-     *         - 收束章 0.6~0.7：更确定性，确保结局完整
      */
     fun generateContent(
         apiKey: String,
@@ -31,11 +25,12 @@ class ApiService {
         model: String,
         systemPrompt: String,
         userPrompt: String,
-        temperature: Float = 0.75f  // P0新增：动态temperature
+        temperature: Float = 0.75f
     ): Flow<String> = flow {
+        var connection: HttpURLConnection? = null
         try {
             val url = URL("$endpoint/chat/completions")
-            val connection = url.openConnection() as HttpURLConnection
+            connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.setRequestProperty("Content-Type", "application/json")
             connection.setRequestProperty("Authorization", "Bearer $apiKey")
@@ -50,17 +45,34 @@ class ApiService {
                     ChatMessage(role = "user", content = userPrompt)
                 ),
                 stream = true,
-                temperature = temperature  // P0：传递temperature参数
+                temperature = temperature
             )
             
+            val jsonBody = gson.toJson(requestBody)
+            
             OutputStreamWriter(connection.outputStream).use { writer ->
-                writer.write(gson.toJson(requestBody))
+                writer.write(jsonBody)
                 writer.flush()
+            }
+            
+            // 检查响应码
+            val responseCode = connection.responseCode
+            if (responseCode !in 200..299) {
+                // 读取错误流
+                val errorStream = connection.errorStream
+                val errorMessage = if (errorStream != null) {
+                    BufferedReader(InputStreamReader(errorStream)).use { reader ->
+                        reader.readText()
+                    }
+                } else {
+                    "HTTP $responseCode: ${connection.responseMessage}"
+                }
+                emit("[ERROR] API错误($responseCode): $errorMessage")
+                return@flow
             }
             
             BufferedReader(InputStreamReader(connection.inputStream)).use { reader ->
                 var line: String?
-                val buffer = StringBuilder()
                 
                 while (reader.readLine().also { line = it } != null) {
                     line?.let {
@@ -74,7 +86,18 @@ class ApiService {
                                         emit(content)
                                     }
                                 } catch (e: Exception) {
-                                    // Ignore parsing errors for partial responses
+                                    // 尝试解析错误响应
+                                    if (data.contains("error", ignoreCase = true)) {
+                                        try {
+                                            val errorResp = gson.fromJson(data, ErrorResponse::class.java)
+                                            if (!errorResp.error?.message.isNullOrBlank()) {
+                                                emit("[ERROR] ${errorResp.error.message}")
+                                                return@flow
+                                            }
+                                        } catch (e2: Exception) {
+                                            // 忽略解析错误
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -82,9 +105,22 @@ class ApiService {
                 }
             }
         } catch (e: Exception) {
-            emit("[ERROR] ${e.message}")
+            emit("[ERROR] ${e.javaClass.simpleName}: ${e.message}")
+        } finally {
+            connection?.disconnect()
         }
     }.flowOn(Dispatchers.IO)
+    
+    // 错误响应模型
+    data class ErrorResponse(
+        val error: ErrorDetail?
+    )
+    
+    data class ErrorDetail(
+        val message: String?,
+        val type: String?,
+        val code: String?
+    )
     
     data class StreamResponse(
         val choices: List<StreamChoice>?
