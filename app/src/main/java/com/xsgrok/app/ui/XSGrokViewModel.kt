@@ -673,7 +673,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             result.lines().filter { it.contains("|") }.forEach { line ->
                 val parts = line.split("|")
                 if (parts.size >= 2) {
-                    novel.adder(parts[0].trim(), parts.getOrNull(1)?.trim() ?: "")
+                    adder(novel,parts[0].trim(), parts.getOrNull(1)?.trim() ?: "")
                 }
             }
             
@@ -841,7 +841,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
 
     fun resetAutoMode() {
         _autoModeState.value = AutoModeState.IDLE
-        _streamingContent.value = ""
     }
     }
     
