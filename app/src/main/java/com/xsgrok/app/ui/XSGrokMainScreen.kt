@@ -4,46 +4,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.window.layout.WindowInfoTracker
 import com.xsgrok.app.ui.screens.*
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun XSGrokMainScreen(
-    windowInfoTracker: WindowInfoTracker,
     viewModel: XSGrokViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val novels by viewModel.novels.collectAsState()
-    val currentNovel by viewModel.currentNovel.collectAsState()
     val isDarkMode = uiState.apiConfig.isDarkMode
-    
-    var windowWidthSizeClass by remember { mutableStateOf(WindowWidthSizeClass.COMPACT) }
-    
-    LaunchedEffect(windowInfoTracker) {
-        windowInfoTracker.windowLayoutInfo(android.app.Activity()).collect { layoutInfo ->
-            windowWidthSizeClass = layoutInfo.displayFeatures
-                .filterIsInstance<androidx.window.layout.WindowLayoutInfo>()
-                .firstOrNull()
-                ?.displayFeatures
-                ?.firstOrNull()
-                ?.let { 
-                    if (it is androidx.window.layout.FoldingFeature && it.isTableTop) {
-                        WindowWidthSizeClass.EXPANDED
-                    } else {
-                        WindowWidthSizeClass.COMPACT
-                    }
-                } ?: WindowWidthSizeClass.COMPACT
-        }
-    }
-    
-    val isExpandedScreen = windowWidthSizeClass != WindowWidthSizeClass.COMPACT
     
     XSGrokTheme(darkTheme = isDarkMode) {
         Scaffold(
@@ -69,35 +42,34 @@ fun XSGrokMainScreen(
                         }
                     }
                 )
-            }
-        ) { paddingValues ->
-            if (isExpandedScreen) {
-                Row(modifier = Modifier.padding(paddingValues)) {
-                    NavigationRail(modifier = Modifier.width(80.dp)) {
-                        NavigationRailItem(
-                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                            label = { Text("Home") },
-                            selected = uiState.currentScreen == Screen.Home,
-                            onClick = { viewModel.navigateTo(Screen.Home) }
-                        )
-                        NavigationRailItem(
-                            icon = { Icon(Icons.Default.Add, contentDescription = "New") },
-                            label = { Text("New") },
-                            selected = uiState.currentScreen == Screen.NewNovel,
-                            onClick = { viewModel.navigateTo(Screen.NewNovel) }
-                        )
-                    }
-                    MainContent(
-                        screen = uiState.currentScreen,
-                        viewModel = viewModel,
-                        modifier = Modifier.weight(1f)
+            },
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                        label = { Text("Home") },
+                        selected = uiState.currentScreen == Screen.Home,
+                        onClick = { viewModel.navigateTo(Screen.Home) }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Add, contentDescription = "New") },
+                        label = { Text("New") },
+                        selected = uiState.currentScreen == Screen.NewNovel,
+                        onClick = { viewModel.navigateTo(Screen.NewNovel) }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                        label = { Text("Settings") },
+                        selected = uiState.currentScreen == Screen.Settings,
+                        onClick = { viewModel.navigateTo(Screen.Settings) }
                     )
                 }
-            } else {
+            }
+        ) { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues)) {
                 MainContent(
                     screen = uiState.currentScreen,
-                    viewModel = viewModel,
-                    modifier = Modifier.padding(paddingValues)
+                    viewModel = viewModel
                 )
             }
         }
@@ -107,8 +79,7 @@ fun XSGrokMainScreen(
 @Composable
 private fun MainContent(
     screen: Screen,
-    viewModel: XSGrokViewModel,
-    modifier: Modifier = Modifier
+    viewModel: XSGrokViewModel
 ) {
     when (screen) {
         Screen.Home -> HomeScreen(viewModel)
