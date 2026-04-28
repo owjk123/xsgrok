@@ -246,252 +246,38 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             abilities = abilities
         )
         novel.characters.add(character)
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun updateCharacter(
-        id: String,
-        name: String,
-        description: String,
-        role: String,
-        appearance: String,
-        personality: String,
-        background: String,
-        abilities: String
-    ) {
-        val novel = _currentNovel.value ?: return
-        val index = novel.characters.indexOfFirst { it.id == id }
-        if (index >= 0) {
-            novel.characters[index] = Character(
-                id = id,
-                name = name,
-                description = description,
-                role = role,
-                appearance = appearance,
-                personality = personality,
-                background = background,
-                abilities = abilities
-            )
-            viewModelScope.launch {
-                localStorage.saveNovel(novel)
-                _currentNovel.value = novel
-            }
-        }
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
     }
     
     fun deleteCharacter(characterId: String) {
         val novel = _currentNovel.value ?: return
         novel.characters.removeAll { it.id == characterId }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    // ========== 世界观管理 ==========
-    
-    fun updateWorldBuilding(
-        worldBackground: String? = null,
-        powerSystem: String? = null,
-        rules: String? = null
-    ) {
-        val novel = _currentNovel.value ?: return
-        val wb = novel.worldBuilding
-        val newWb = wb.copy(
-            worldBackground = worldBackground ?: wb.worldBackground,
-            powerSystem = powerSystem ?: wb.powerSystem,
-            rules = rules ?: wb.rules
-        )
-        val newNovel = novel.copy(worldBuilding = newWb)
-        viewModelScope.launch {
-            localStorage.saveNovel(newNovel)
-            _currentNovel.value = newNovel
-        }
-    }
-    
-    // 地点
-    fun addLocation(name: String, description: String, type: String, significance: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.geography.add(Location(
-            name = name,
-            description = description,
-            type = type,
-            significance = significance
-        ))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteLocation(id: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.geography.removeAll { it.id == id }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    // 势力
-    fun addFaction(name: String, description: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.factions.add(Faction(name = name, description = description))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteFaction(id: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.factions.removeAll { it.id == id }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    // 物品
-    fun addItem(name: String, description: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.items.add(GameItem(name = name, description = description))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteItem(id: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.items.removeAll { it.id == id }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    // 技能
-    fun addSkill(name: String, description: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.skills.add(Skill(name = name, description = description))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteSkill(id: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.skills.removeAll { it.id == id }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    // 时间线
-    fun addTimelineEvent(title: String, time: String, description: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.timeline.add(TimelineEvent(
-            title = title,
-            time = time,
-            description = description
-        ))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteTimelineEvent(id: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.timeline.removeAll { it.id == id }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    // ========== AI 生成功能 ==========
-    
-    fun generateWorldBuilding() {
-        val novel = _currentNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        generationJob = viewModelScope.launch {
-            _isGenerating.value = true
-            
-            val prompt = """
-                为小说《${novel.title}》生成世界观设定。
-                
-                类型：${novel.type}
-                风格：${novel.style}
-                主角：${novel.mainCharacter}
-                大纲：${novel.outline}
-                
-                请生成：
-                1. 世界背景（200字以内）
-                2. 力量体系（200字以内）
-                3. 世界规则（100字以内）
-                
-                请严格按照以下JSON格式输出：
-                {
-                    "worldBackground": "世界背景描述",
-                    "powerSystem": "力量体系描述",
-                    "rules": "世界规则"
-                }
-            """.trimIndent()
-            
-            var result = ""
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = "你是一个专业的小说世界观设计师",
-                userPrompt = prompt
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    result += content
-                }
-            }
-            
-            val wb = novel.worldBuilding.copy(
-                worldBackground = extractField(result, "worldBackground") ?: novel.worldBuilding.worldBackground,
-                powerSystem = extractField(result, "powerSystem") ?: novel.worldBuilding.powerSystem,
-                rules = extractField(result, "rules") ?: novel.worldBuilding.rules
-            )
-            
-            val newNovel = novel.copy(worldBuilding = wb)
-            localStorage.saveNovel(newNovel)
-            _currentNovel.value = newNovel
-            _isGenerating.value = false
-        }
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
     }
     
     fun generateCharacters() {
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
         
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             
             val prompt = """
-                为小说《${novel.title}》生成角色设定。
+                为小说《${novel.title}》设计角色。
                 
-                类型：${novel.type}
+                小说类型：${novel.type}
                 风格：${novel.style}
                 主角：${novel.mainCharacter}
-                世界背景：${novel.worldBuilding.worldBackground}
                 
-                请生成3-5个重要角色（包括主角的详细设定），每个角色包含：
-                姓名、角色定位、外貌描述、性格特点、背景故事、能力特长
-                
-                按以下格式输出，每个角色一行：
-                姓名|角色|外貌|性格|背景|能力
+                请生成3-5个角色，每个角色一行：
+                角色名|角色定位|角色描述
             """.trimIndent()
             
             var result = ""
@@ -499,7 +285,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 apiKey = config.apiKey,
                 endpoint = config.endpoint,
                 model = config.model,
-                systemPrompt = "你是一个专业的小说角色设计师",
+                systemPrompt = "你是专业的小说角色设计师",
                 userPrompt = prompt
             ).collect { content ->
                 if (!content.startsWith("[ERROR]")) {
@@ -507,18 +293,13 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 }
             }
             
-            // 解析结果并添加角色
             result.lines().filter { it.contains("|") }.forEach { line ->
                 val parts = line.split("|")
-                if (parts.size >= 2) {
+                if (parts.size >= 3) {
                     novel.characters.add(Character(
-                        name = parts.getOrNull(0)?.trim() ?: "",
-                        role = parts.getOrNull(1)?.trim() ?: "配角",
-                        description = parts.getOrNull(2)?.trim() ?: "",
-                        appearance = parts.getOrNull(2)?.trim() ?: "",
-                        personality = parts.getOrNull(3)?.trim() ?: "",
-                        background = parts.getOrNull(4)?.trim() ?: "",
-                        abilities = parts.getOrNull(5)?.trim() ?: ""
+                        name = parts[0].trim(),
+                        role = parts[1].trim(),
+                        description = parts[2].trim()
                     ))
                 }
             }
@@ -529,20 +310,144 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    fun generateLocations() {
+    // ========== 世界观管理 ==========
+    
+    fun updateWorldBackground(background: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding = novel.worldBuilding.copy(worldBackground = background)
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun updatePowerSystem(system: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding = novel.worldBuilding.copy(powerSystem = system)
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun addLocation(name: String, description: String, type: String = "", significance: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.geography.add(Location(
+            name = name,
+            description = description,
+            type = type,
+            significance = significance
+        ))
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun deleteLocation(locationId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.geography.removeAll { it.id == locationId }
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun addFaction(name: String, description: String, leader: String = "", goals: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.factions.add(Faction(
+            name = name,
+            description = description,
+            leader = leader,
+            goals = goals
+        ))
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun deleteFaction(factionId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.factions.removeAll { it.id == factionId }
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun addItem(name: String, description: String, type: String = "", abilities: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.items.add(GameItem(
+            name = name,
+            description = description,
+            type = type,
+            abilities = abilities
+        ))
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun deleteItem(itemId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.items.removeAll { it.id == itemId }
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun addSkill(name: String, description: String, type: String = "", requirements: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.skills.add(Skill(
+            name = name,
+            description = description,
+            type = type,
+            requirements = requirements
+        ))
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun deleteSkill(skillId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.skills.removeAll { it.id == skillId }
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun addTimelineEvent(title: String, description: String, time: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.timeline.add(TimelineEvent(
+            title = title,
+            description = description,
+            time = time
+        ))
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    fun deleteTimelineEvent(eventId: String) {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding.timeline.removeAll { it.id == eventId }
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    // ========== AI生成功能 ==========
+    
+    fun generateWorldBackground() {
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
         
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             
             val prompt = """
-                为小说《${novel.title}》生成重要地点。
+                为小说《${novel.title}》设计一个完整的世界观背景。
                 
-                世界背景：${novel.worldBuilding.worldBackground}
+                小说类型：${novel.type}
+                风格：${novel.style}
+                主角：${novel.mainCharacter}
                 
-                请生成3-5个重要地点，每个地点一行：
-                地点名称|类型|描述|重要性
+                请详细描述：
+                1. 世界的基本设定和历史
+                2. 世界的地理环境
+                3. 社会结构和文化
+                4. 重要势力和种族
+                
+                请用中文回答，详细且有创意。
             """.trimIndent()
             
             var result = ""
@@ -550,7 +455,99 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 apiKey = config.apiKey,
                 endpoint = config.endpoint,
                 model = config.model,
-                systemPrompt = "你是一个专业的小说场景设计师",
+                systemPrompt = "你是专业的小说世界观设计师",
+                userPrompt = prompt
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    result += content
+                }
+            }
+            
+            if (result.isNotBlank()) {
+                novel.worldBuilding = novel.worldBuilding.copy(worldBackground = result)
+                localStorage.saveNovel(novel)
+                _currentNovel.value = novel
+            }
+            _isGenerating.value = false
+        }
+    }
+    
+    fun generatePowerSystem() {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            val prompt = """
+                为小说《${novel.title}》设计力量体系。
+                
+                世界背景：${novel.worldBuilding.worldBackground}
+                
+                请设计：
+                1. 力量来源和修炼方式
+                2. 等级划分和名称
+                3. 各类能力的特点和限制
+                4. 突破条件的设定
+                
+                请用中文回答，有创意且逻辑自洽。
+            """.trimIndent()
+            
+            var result = ""
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "你是专业的小说设定设计师",
+                userPrompt = prompt
+            ).collect { content ->
+                if (!content.startsWith("[ERROR]")) {
+                    result += content
+                }
+            }
+            
+            if (result.isNotBlank()) {
+                novel.worldBuilding = novel.worldBuilding.copy(powerSystem = result)
+                localStorage.saveNovel(novel)
+                _currentNovel.value = novel
+            }
+            _isGenerating.value = false
+        }
+    }
+    
+    fun generateLocations() {
+        val novel = _currentNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            _isGenerating.value = true
+            
+            val prompt = """
+                为小说《${novel.title}》生成地点/场景。
+                
+                世界背景：${novel.worldBuilding.worldBackground}
+                力量体系：${novel.worldBuilding.powerSystem}
+                
+                请生成3-5个地点，每个一行：
+                地点名|地点类型|地点描述|重要程度
+            """.trimIndent()
+            
+            var result = ""
+            apiService.generateContent(
+                apiKey = config.apiKey,
+                endpoint = config.endpoint,
+                model = config.model,
+                systemPrompt = "你是专业的小说场景设计师",
                 userPrompt = prompt
             ).collect { content ->
                 if (!content.startsWith("[ERROR]")) {
@@ -560,9 +557,9 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             
             result.lines().filter { it.contains("|") }.forEach { line ->
                 val parts = line.split("|")
-                if (parts.size >= 2) {
+                if (parts.size >= 3) {
                     novel.worldBuilding.geography.add(Location(
-                        name = parts.getOrNull(0)?.trim() ?: "",
+                        name = parts[0].trim(),
                         type = parts.getOrNull(1)?.trim() ?: "",
                         description = parts.getOrNull(2)?.trim() ?: "",
                         significance = parts.getOrNull(3)?.trim() ?: ""
@@ -578,7 +575,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     
     fun generateFactions() {
         val novel = _currentNovel.value ?: return
-        generateSimpleItems("势力/组织") { name, desc ->
+        generateSimpleItems("势力/门派") { name, desc ->
             novel.worldBuilding.factions.add(Faction(name = name, description = desc))
         }
     }
@@ -596,9 +593,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             novel.worldBuilding.skills.add(Skill(name = name, description = desc))
         }
     }
-        }
-    }
-    
     
     fun generateTimeline() {
         val novel = _currentNovel.value ?: return
@@ -645,6 +639,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             _isGenerating.value = false
         }
     }
+    
     private fun generateSimpleItems(typeName: String, adder: Novel.(String, String) -> Unit) {
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
@@ -843,10 +838,9 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     fun finishAutoMode() {
         _autoModeState.value = AutoModeState.COMPLETED
     }
-
+    
     fun resetAutoMode() {
         _autoModeState.value = AutoModeState.IDLE
-    }
     }
     
     // ========== 辅助方法 ==========
