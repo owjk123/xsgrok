@@ -39,6 +39,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     private val _autoModeState = MutableStateFlow(AutoModeState.IDLE)
     val autoModeState: StateFlow<AutoModeState> = _autoModeState.asStateFlow()
     
+    // 全自动模式待审阅的小说
+    private val _autoModeNovel = MutableStateFlow<Novel?>(null)
+    val autoModeNovel: StateFlow<Novel?> = _autoModeNovel.asStateFlow()
+    
     private var generationJob: Job? = null
     
     init {
@@ -766,6 +770,8 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     
     // ========== 全自动模式 ==========
     
+    // ========== 全自动模式 ==========
+    
     fun startAutoMode(userPrompt: String) {
         val config = _uiState.value.apiConfig
         
@@ -777,8 +783,9 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         generationJob = viewModelScope.launch {
             try {
                 _autoModeState.value = AutoModeState.GENERATING_OUTLINE
+                _streamingContent.value = ""
                 
-                // 步骤1: 生成小说信息和大纲
+                // 生成小说基础资料
                 var outlineResult = ""
                 var outlineError: String? = null
                 
@@ -786,52 +793,45 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     apiKey = config.apiKey,
                     endpoint = config.endpoint,
                     model = config.model,
-                    systemPrompt = "你是一个专业的小说创作顾问",
+                    systemPrompt = "你是一个专业的小说创作顾问，请严格按照JSON格式输出。",
                     userPrompt = """
                         用户想写：$userPrompt
                         
-                        请生成完整的小说设定：
-                        1. 小说标题
-                        2. 类型（玄幻/都市/科幻/悬疑等）
-                        3. 风格（热血/轻松/黑暗等）
-                        4. 主角设定
-                        5. 详细大纲（500字左右）
-                        6. 世界背景
-                        7. 力量体系
+                        请生成完整的小说基础设定，包括：
+                        1. 小说标题（有创意且吸引人）
+                        2. 类型（玄幻/都市/科幻/悬疑/仙侠/游戏/历史等）
+                        3. 风格（热血/轻松/黑暗/搞笑/温馨等）
+                        4. 主角设定（姓名、性格、特殊能力等）
+                        5. 详细大纲（500字左右，包含开头、发展、高潮、结局）
+                        6. 世界背景（世界观、历史、地理等）
+                        7. 力量体系（修炼等级、能力划分等）
                         
-                        请严格按JSON格式输出：
-                        {
-                            "title": "标题",
-                            "type": "类型",
-                            "style": "风格",
-                            "mainCharacter": "主角设定",
-                            "outline": "详细大纲",
-                            "worldBackground": "世界背景",
-                            "powerSystem": "力量体系"
-                        }
+                        请严格按JSON格式输出，不要添加任何其他内容：
+                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"详细大纲","worldBackground":"世界背景","powerSystem":"力量体系"}
                     """.trimIndent()
                 ).collect { content ->
                     if (content.startsWith("[ERROR]")) {
                         outlineError = content
                     } else {
                         outlineResult += content
+                        _streamingContent.value += content
                     }
                 }
                 
                 // 检查大纲生成是否成功
                 if (!outlineError.isNullOrEmpty()) {
-                    _errorMessage.value = "大纲生成失败: $outlineError"
+                    _errorMessage.value = "资料生成失败: $outlineError"
                     _autoModeState.value = AutoModeState.IDLE
                     return@launch
                 }
                 
                 if (outlineResult.isBlank()) {
-                    _errorMessage.value = "大纲生成失败，请检查网络连接"
+                    _errorMessage.value = "资料生成失败，请检查网络连接"
                     _autoModeState.value = AutoModeState.IDLE
                     return@launch
                 }
                 
-                // 解析并创建小说
+                // 解析并创建待审阅的小说
                 val novel = Novel(
                     title = extractField(outlineResult, "title") ?: "未命名小说",
                     type = extractField(outlineResult, "type") ?: "玄幻",
@@ -844,10 +844,59 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     )
                 )
                 
+                // 保存到待审阅状态，进入审阅阶段
+                _autoModeNovel.value = novel
+                _autoModeState.value = AutoModeState.REVIEW
+                
+            } catch (e: Exception) {
+                _isGenerating.value = false
+                _errorMessage.value = "生成失败: ${e.message}"
+                _autoModeState.value = AutoModeState.IDLE
+            }
+        }
+    }
+    
+    // 更新待审阅的小说资料
+    fun updateAutoModeNovel(
+        title: String? = null,
+        type: String? = null,
+        style: String? = null,
+        mainCharacter: String? = null,
+        outline: String? = null,
+        worldBackground: String? = null,
+        powerSystem: String? = null
+    ) {
+        val novel = _autoModeNovel.value ?: return
+        _autoModeNovel.value = novel.copy(
+            title = title ?: novel.title,
+            type = type ?: novel.type,
+            style = style ?: novel.style,
+            mainCharacter = mainCharacter ?: novel.mainCharacter,
+            outline = outline ?: novel.outline,
+            worldBuilding = novel.worldBuilding.copy(
+                worldBackground = worldBackground ?: novel.worldBuilding.worldBackground,
+                powerSystem = powerSystem ?: novel.worldBuilding.powerSystem
+            )
+        )
+    }
+    
+    // 确认资料并开始写作
+    fun confirmAndStartWriting() {
+        val novel = _autoModeNovel.value ?: return
+        val config = _uiState.value.apiConfig
+        
+        if (config.apiKey.isBlank()) {
+            _errorMessage.value = "请先配置API密钥"
+            return
+        }
+        
+        generationJob = viewModelScope.launch {
+            try {
+                // 保存小说
                 localStorage.saveNovel(novel)
                 _currentNovel.value = novel
                 
-                // 步骤2: 生成第一章
+                // 开始生成第一章
                 _autoModeState.value = AutoModeState.GENERATING_CHAPTER
                 _isGenerating.value = true
                 _streamingContent.value = ""
@@ -874,7 +923,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 
                 if (!chapterError.isNullOrEmpty()) {
                     _errorMessage.value = "章节生成失败: $chapterError"
-                    // 保持当前状态让用户可以重试
                     return@launch
                 }
                 
@@ -895,7 +943,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             } catch (e: Exception) {
                 _isGenerating.value = false
                 _errorMessage.value = "生成失败: ${e.message}"
-                _autoModeState.value = AutoModeState.IDLE
             }
         }
     }
@@ -973,6 +1020,15 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     
     fun resetAutoMode() {
         _autoModeState.value = AutoModeState.IDLE
+        _autoModeNovel.value = null
+        _streamingContent.value = ""
+    }
+    
+    fun retryAutoMode() {
+        // 保持当前小说数据，重置到审阅状态
+        _autoModeState.value = AutoModeState.REVIEW
+        _isGenerating.value = false
+        _streamingContent.value = ""
     }
     
     // ========== 辅助方法 ==========

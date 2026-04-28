@@ -15,9 +15,11 @@ import com.xsgrok.app.R
 import com.xsgrok.app.ui.Screen
 import com.xsgrok.app.ui.XSGrokViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoModeScreen(viewModel: XSGrokViewModel) {
     val currentNovel by viewModel.currentNovel.collectAsState()
+    val autoModeNovel by viewModel.autoModeNovel.collectAsState()
     val streamingContent by viewModel.streamingContent.collectAsState()
     val isGenerating by viewModel.isGenerating.collectAsState()
     val autoModeState by viewModel.autoModeState.collectAsState()
@@ -26,9 +28,26 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
     var userPrompt by remember { mutableStateOf("") }
     var nextChapterGuide by remember { mutableStateOf("") }
     
-    // 显示错误提示
-    LaunchedEffect(errorMessage) {
-        // 错误会自动显示在 UI 中
+    // 审阅阶段的编辑状态
+    var editTitle by remember { mutableStateOf("") }
+    var editType by remember { mutableStateOf("") }
+    var editStyle by remember { mutableStateOf("") }
+    var editMainCharacter by remember { mutableStateOf("") }
+    var editOutline by remember { mutableStateOf("") }
+    var editWorldBackground by remember { mutableStateOf("") }
+    var editPowerSystem by remember { mutableStateOf("") }
+    
+    // 当进入审阅状态时，初始化编辑字段
+    LaunchedEffect(autoModeNovel) {
+        autoModeNovel?.let { novel ->
+            editTitle = novel.title
+            editType = novel.type
+            editStyle = novel.style
+            editMainCharacter = novel.mainCharacter
+            editOutline = novel.outline
+            editWorldBackground = novel.worldBuilding.worldBackground
+            editPowerSystem = novel.worldBuilding.powerSystem
+        }
     }
     
     Column(
@@ -99,7 +118,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
         
         when (autoModeState) {
-            com.xsgrok.app.ui.screens.AutoModeState.IDLE -> {
+            AutoModeState.IDLE -> {
                 OutlinedTextField(
                     value = userPrompt,
                     onValueChange = { userPrompt = it },
@@ -149,7 +168,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 }
             }
             
-            com.xsgrok.app.ui.screens.AutoModeState.GENERATING_OUTLINE -> {
+            AutoModeState.GENERATING_OUTLINE -> {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -161,7 +180,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = stringResource(R.string.generating_outline),
+                            text = "正在生成基础资料...",
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
@@ -170,7 +189,6 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        // 添加取消按钮
                         OutlinedButton(
                             onClick = { 
                                 viewModel.stopGeneration()
@@ -185,7 +203,133 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 }
             }
             
-            com.xsgrok.app.ui.screens.AutoModeState.GENERATING_CHAPTER -> {
+            AutoModeState.REVIEW -> {
+                // 审阅基础资料界面
+                autoModeNovel?.let { novel ->
+                    Text(
+                        text = "基础资料审阅",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "请审阅并修改以下资料，确认后开始创作",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = editTitle,
+                            onValueChange = { editTitle = it },
+                            label = { Text("小说标题") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = editType,
+                                onValueChange = { editType = it },
+                                label = { Text("类型") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = editStyle,
+                                onValueChange = { editStyle = it },
+                                label = { Text("风格") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                        }
+                        
+                        OutlinedTextField(
+                            value = editMainCharacter,
+                            onValueChange = { editMainCharacter = it },
+                            label = { Text("主角设定") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 2,
+                            maxLines = 4
+                        )
+                        
+                        OutlinedTextField(
+                            value = editOutline,
+                            onValueChange = { editOutline = it },
+                            label = { Text("故事大纲") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 4,
+                            maxLines = 8
+                        )
+                        
+                        OutlinedTextField(
+                            value = editWorldBackground,
+                            onValueChange = { editWorldBackground = it },
+                            label = { Text("世界背景") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                            maxLines = 6
+                        )
+                        
+                        OutlinedTextField(
+                            value = editPowerSystem,
+                            onValueChange = { editPowerSystem = it },
+                            label = { Text("力量体系") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                            maxLines = 6
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // 按钮区域
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { viewModel.resetAutoMode() },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("重新生成")
+                        }
+                        Button(
+                            onClick = {
+                                // 更新资料并开始写作
+                                viewModel.updateAutoModeNovel(
+                                    title = editTitle,
+                                    type = editType,
+                                    style = editStyle,
+                                    mainCharacter = editMainCharacter,
+                                    outline = editOutline,
+                                    worldBackground = editWorldBackground,
+                                    powerSystem = editPowerSystem
+                                )
+                                viewModel.confirmAndStartWriting()
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("开始写作")
+                        }
+                    }
+                }
+            }
+            
+            AutoModeState.GENERATING_CHAPTER -> {
                 currentNovel?.let { novel ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -292,12 +436,9 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // 如果正在生成，显示停止按钮
                 if (isGenerating) {
                     OutlinedButton(
-                        onClick = { 
-                            viewModel.stopGeneration()
-                        },
+                        onClick = { viewModel.stopGeneration() },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.Stop, contentDescription = null)
@@ -306,7 +447,6 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                     }
                 }
                 
-                // 如果生成失败或停止，显示重试按钮
                 if (!isGenerating && streamingContent.isBlank() && errorMessage != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -321,9 +461,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                             Text("重新开始")
                         }
                         Button(
-                            onClick = { 
-                                currentNovel?.let { viewModel.continueAutoMode("") }
-                            },
+                            onClick = { viewModel.retryAutoMode() },
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Default.Refresh, contentDescription = null)
@@ -386,7 +524,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                 }
             }
             
-            com.xsgrok.app.ui.screens.AutoModeState.COMPLETED -> {
+            AutoModeState.COMPLETED -> {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
