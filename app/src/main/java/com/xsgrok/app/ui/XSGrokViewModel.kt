@@ -1285,47 +1285,6 @@ ${if (isConvergence) "5. 【重要】本章必须推进主线结局，回收至�
             请创作这一章，字数3000-5000字。
         """.trimIndent()
     }
-
-    // ========== P1-P4 新增方法 ==========
-    
-    // P1: 更新感官配置
-    fun updateSensoryProfile(novel: Novel, profile: SensoryProfile): Novel {
-        val updated = novel.copy(sensoryProfile = profile)
-        viewModelScope.launch {
-            localStorage.saveNovel(updated)
-            _currentNovel.value = updated
-        }
-        return updated
-    }
-    
-    // P1: 更新生成配置
-    fun updateGenerationConfig(novel: Novel, config: GenerationConfig): Novel {
-        val updated = novel.copy(generationConfig = config)
-        viewModelScope.launch {
-            localStorage.saveNovel(updated)
-            _currentNovel.value = updated
-        }
-        return updated
-    }
-    
-    // P4: 全自动模式设置更新
-    fun updateAutoModeTabooLevel(level: TabooLevel) {
-        val novel = _autoModeNovel.value ?: return
-        val newProfile = novel.sensoryProfile.copy(tabooLevel = level)
-        _autoModeNovel.value = novel.copy(sensoryProfile = newProfile)
-    }
-    
-    fun updateAutoModeDescriptionDensity(density: Int) {
-        val novel = _autoModeNovel.value ?: return
-        val newProfile = novel.sensoryProfile.copy(descriptionDensity = density)
-        _autoModeNovel.value = novel.copy(sensoryProfile = newProfile)
-    }
-    
-    fun updateAutoModeRhythmPreference(preference: RhythmPreference) {
-        val novel = _autoModeNovel.value ?: return
-        val newConfig = novel.generationConfig.copy(rhythmPreference = preference)
-        _autoModeNovel.value = novel.copy(generationConfig = newConfig)
-    }
 }
 
 data class XSGrokUiState(
@@ -1386,4 +1345,23 @@ enum class Screen {
         val newConfig = novel.generationConfig.copy(rhythmPreference = preference)
         _autoModeNovel.value = novel.copy(generationConfig = newConfig)
     }
+}
+
+data class XSGrokUiState(
+    val apiConfig: ApiConfig = ApiConfig(),
+    val currentScreen: Screen = Screen.Home
+)
+
+enum class Screen {
+    Home,
+    Settings,
+    NewNovel,
+    NovelDetail,
+    Characters,
+    Drafts,
+    ChapterGeneration,
+    AutoMode,
+    Bookshelf,
+    Reading,
+    WorldBuilding
 }
