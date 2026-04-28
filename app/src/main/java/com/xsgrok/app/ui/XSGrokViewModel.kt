@@ -250,6 +250,34 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         _currentNovel.value = novel
     }
     
+    fun updateCharacter(
+        characterId: String,
+        name: String,
+        description: String,
+        role: String,
+        appearance: String,
+        personality: String,
+        background: String,
+        abilities: String
+    ) {
+        val novel = _currentNovel.value ?: return
+        val index = novel.characters.indexOfFirst { it.id == characterId }
+        if (index >= 0) {
+            novel.characters[index] = Character(
+                id = characterId,
+                name = name,
+                description = description,
+                role = role,
+                appearance = appearance,
+                personality = personality,
+                background = background,
+                abilities = abilities
+            )
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
     fun deleteCharacter(characterId: String) {
         val novel = _currentNovel.value ?: return
         novel.characters.removeAll { it.id == characterId }
@@ -311,6 +339,17 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     // ========== 世界观管理 ==========
+    
+    fun updateWorldBuilding(worldBackground: String, powerSystem: String, rules: String = "") {
+        val novel = _currentNovel.value ?: return
+        novel.worldBuilding = novel.worldBuilding.copy(
+            worldBackground = worldBackground,
+            powerSystem = powerSystem,
+            rules = rules
+        )
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
     
     fun updateWorldBackground(background: String) {
         val novel = _currentNovel.value ?: return
@@ -422,7 +461,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     
     // ========== AI生成功能 ==========
     
-    fun generateWorldBackground() {
+    fun generateWorldBuilding() {
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
         
@@ -446,6 +485,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 2. 世界的地理环境
                 3. 社会结构和文化
                 4. 重要势力和种族
+                5. 力量体系
                 
                 请用中文回答，详细且有创意。
             """.trimIndent()
@@ -470,6 +510,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             }
             _isGenerating.value = false
         }
+    }
+    
+    fun generateWorldBackground() {
+        generateWorldBuilding()
     }
     
     fun generatePowerSystem() {
