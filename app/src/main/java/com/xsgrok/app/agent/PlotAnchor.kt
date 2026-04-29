@@ -1,5 +1,7 @@
 package com.xsgrok.app.agent
 
+import kotlin.math.max
+
 /**
  * 剧情锚点系统 - 多层目标管理
  * 确保长篇生成不跑偏的核心机制
@@ -100,7 +102,7 @@ class PlotController {
         }.sortedByDescending { it.priority }
         
         val currentActive = anchors.count { it.status == AnchorStatus.ACTIVE }
-        val toActivate = pending.take(max(0, maxActive - currentActive))
+        val toActivate = pending.take(if (maxActive > currentActive) maxActive - currentActive else 0)
         
         toActivate.forEach { anchor ->
             val index = anchors.indexOf(anchor)

@@ -103,7 +103,7 @@ class CharacterMindSystem {
             currentEmotion = emotionImpact,
             emotionIntensity = minOf(10, current.emotionIntensity + intensity / 2),
             stress = minOf(100, current.stress + when (emotionImpact) {
-                EmotionType.FEAR, EmotionType.ANGER, EmotionType.DESPAIR -> intensity * 5
+                EmotionType.FEAR, EmotionType.ANGRY, EmotionType.DESPAIR -> intensity * 5
                 else -> 0
             }),
             recentTrauma = if (emotionImpact in listOf(EmotionType.FEAR, EmotionType.DESPAIR, EmotionType.SHAME)) {
@@ -149,7 +149,7 @@ class CharacterMindSystem {
         }
         
         // 检查高压状态下的异常冷静
-        if (mentalState.stress > 80 && proposedAction.contains("平静") && mentalState.currentEmotion == EmotionType.ANGER) {
+        if (mentalState.stress > 80 && proposedAction.contains("平静") && mentalState.currentEmotion == EmotionType.ANGRY) {
             return OOCReport(
                 characterId = characterId,
                 violationType = "情绪不连贯",
