@@ -941,26 +941,34 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     apiKey = config.apiKey,
                     endpoint = config.endpoint,
                     model = config.model,
-                    systemPrompt = "你是一个专业的小说创作顾问，请严格按照JSON格式输出。",
+                    systemPrompt = "你是一个全能型小说创作顾问，精通玄幻、都市、言情、悬疑、科幻、历史、日常等各类型小说创作。请根据用户的创作意图，智能判断小说类型，生成匹配的基础设定。严格按照JSON格式输出。",
                     userPrompt = """
                         用户想写：$userPrompt
                         
-                        请生成完整的小说基础设定，包括：
-                        1. 小说标题（有创意且吸引人）
-                        2. 类型（玄幻/都市/科幻/悬疑/仙侠/游戏/历史等）
-                        3. 风格（热血/轻松/黑暗/搞笑/温馨等）
-                        4. 主角设定（姓名、性格、特殊能力等）
-                        5. 详细大纲（500字左右，包含开头、发展、高潮、结局）
-                        6. 世界背景（世界观、历史、地理等，200字以上）
-                        7. 力量体系（修炼等级、能力划分等）
-                        8. 世界规则（社会规则、禁忌、特殊法则等，100字以上）
-                        9. 关键节点（8-10个故事关键转折点，每个一行，格式：节点标题|节点描述）
-                        10. 主要角色（至少3个，包含配角和反派）
-                        11. 重要地点（至少3个）
-                        12. 势力组织（至少2个）
+                        请先分析用户意图，判断最适合的小说类型，然后生成完整的基础设定。
                         
-                        请严格按JSON格式输出，不要添加任何其他内容：
-                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"详细大纲\n关键节点：\n1. 开篇\n2. 矛盾初现\n3. 危机升级...","worldBackground":"世界背景","powerSystem":"力量体系","worldRules":"世界规则","characters":[{"name":"角色名","description":"描述","role":"主角/配角/反派","appearance":"外貌","personality":"性格","background":"背景","abilities":"能力","relationships":"关系"}],"locations":[{"name":"地名","description":"描述","type":"城市/荒野/秘境","significance":"重要性"}],"factions":[{"name":"势力名","description":"描述","leader":"首领","goals":"目标","relationships":"与其他势力关系"}]}
+                        【重要原则】
+                        - 类型由内容决定，不要默认往玄幻/战斗方向靠
+                        - 都市、言情、悬疑、日常、科幻、历史等都可能，务必根据用户意图匹配
+                        - 力量体系/势力组织等字段，如果该类型不需要，填空字符串""或空数组[]
+                        - 世界背景应根据类型调整：玄幻写修炼世界，都市写社会环境，言情写人物关系网，悬疑写案件背景
+                        
+                        请生成：
+                        1. 小说标题（有创意且吸引人）
+                        2. 类型（根据用户意图判断，如：都市言情/悬疑推理/日常治愈/玄幻修仙/科幻未来/历史架空/职场商战/校园青春等）
+                        3. 风格（与类型匹配，如：温馨细腻/紧张烧脑/轻松幽默/热血激昂/深沉厚重等）
+                        4. 主角设定（姓名、性格、核心特征，注意：不是所有主角都需要"特殊能力"）
+                        5. 详细大纲（500字左右，包含开头、发展、高潮、结局）
+                        6. 世界背景（根据类型调整：玄幻→修炼世界；都市→社会环境；言情→关系网背景；悬疑→案件背景；日常→生活圈环境）
+                        7. 力量体系（仅玄幻/仙侠/科幻需要，其他类型填""）
+                        8. 世界规则（社会规则/禁忌/核心矛盾，100字以上）
+                        9. 关键节点（8-10个故事关键转折点，格式：节点标题|节点描述）
+                        10. 主要角色（至少3个，含配角和对手/反派，abilities字段非战斗类填""）
+                        11. 重要地点（至少3个，type根据类型调整：城市/街区/办公室/学校/秘境/星球等）
+                        12. 势力组织（至少2个，如类型不需要组织可填空数组[]）
+                        
+                        严格按JSON格式输出：
+                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"详细大纲\n关键节点：\n1. 开篇\n2. ...","worldBackground":"世界背景","powerSystem":"力量体系(非战斗类填空)","worldRules":"世界规则","characters":[{"name":"角色名","description":"描述","role":"主角/配角/对手/反派","appearance":"外貌","personality":"性格","background":"背景","abilities":"能力(无则填空)","relationships":"关系"}],"locations":[{"name":"地名","description":"描述","type":"类型","significance":"重要性"}],"factions":[{"name":"势力名","description":"描述","leader":"首领","goals":"目标","relationships":"与其他势力关系"}]}
                     """.trimIndent()
                 ).collect { content ->
                     if (content.startsWith("[ERROR]")) {
@@ -999,8 +1007,8 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 
                 val novel = Novel(
                     title = extractField(outlineResult, "title") ?: "未命名小说",
-                    type = extractField(outlineResult, "type") ?: "玄幻",
-                    style = extractField(outlineResult, "style") ?: "热血",
+                    type = extractField(outlineResult, "type") ?: "",
+                    style = extractField(outlineResult, "style") ?: "",
                     mainCharacter = extractField(outlineResult, "mainCharacter") ?: "主角",
                     outline = outlineText,
                     characters = characters.toMutableList(),

@@ -130,44 +130,121 @@ object GenerationPresets {
             """.trimIndent()
         ),
         
-        // 4. 史诗奇幻
+        // 4. 都市言情
         GenerationPreset(
-            id = "epic_fantasy",
-            name = "史诗奇幻",
-            description = "宏大世界观，多线叙事，英雄传说",
-            icon = "⚔️",
+            id = "urban_romance",
+            name = "都市言情",
+            description = "现代都市，情感驱动，关系纠葛",
+            icon = "💕",
             sensoryProfile = SensoryProfile(
                 descriptionDensity = 7,
-                sensoryFocus = listOf(SensoryType.VISUAL, SensoryType.AUDITORY, SensoryType.OLFACTORY),
+                sensoryFocus = listOf(SensoryType.VISUAL, SensoryType.TACTILE, SensoryType.OLFACTORY),
                 tabooLevel = TabooLevel.MODERATE,
-                intimateSceneIntensity = 4,
-                emotionExpressionStyle = EmotionStyle.MODERATE
+                intimateSceneIntensity = 6,
+                emotionExpressionStyle = EmotionStyle.IMPLICIT
             ),
             generationConfig = GenerationConfig(
-                rhythmPreference = RhythmPreference.BALANCED,
-                perspectiveMode = PerspectiveMode.OMNISCIENT,
-                intensityLevel = 7,
+                rhythmPreference = RhythmPreference.SLOW_BURN,
+                perspectiveMode = PerspectiveMode.THIRD_PERSON,
+                intensityLevel = 6,
                 pacingConfig = PacingConfig(
-                    slowBuildupRatio = 0.35f,
+                    slowBuildupRatio = 0.45f,
                     progressionRatio = 0.3f,
-                    climaxRatio = 0.2f,
+                    climaxRatio = 0.1f,
                     aftermathRatio = 0.15f,
                     tensionPoints = 3,
                     releasePoints = 2
                 )
             ),
             systemPromptAddition = """
-                【史诗奇幻风格强化】
-                - 世界观描写占20%篇幅，展现广度和深度
-                - 多势力博弈，阵营冲突
-                - 英雄成长弧线清晰
-                - 战争/战斗场面宏大，有战略视角
-                - 神话传说和远古秘密穿插其中
-                - 角色命运与时代洪流交织
+                【都市言情风格强化】
+                - 人物关系是核心驱动，情感变化占40%以上
+                - 社会背景真实：职场、家庭、社交圈
+                - 对话要有潜台词，言外之意比直说更重要
+                - 微表情和肢体语言传递情感
+                - 冲突来源于误解、选择、现实压力
+                - 感情发展要有合理的节奏，不突兀
+                - 生活细节增加代入感：食物、穿着、天气
             """.trimIndent()
         ),
         
-        // 5. 日常治愈
+        // 5. 暗黑悬疑
+        GenerationPreset(
+            id = "dark_thriller",
+            name = "暗黑悬疑",
+            description = "心理惊悚，氛围压抑，反转密集",
+            icon = "🌑",
+            sensoryProfile = SensoryProfile(
+                descriptionDensity = 7,
+                sensoryFocus = listOf(SensoryType.VISUAL, SensoryType.AUDITORY, SensoryType.PROPRIOCEPTION),
+                tabooLevel = TabooLevel.MODERATE,
+                intimateSceneIntensity = 3,
+                emotionExpressionStyle = EmotionStyle.RAW
+            ),
+            generationConfig = GenerationConfig(
+                rhythmPreference = RhythmPreference.BALANCED,
+                perspectiveMode = PerspectiveMode.FIRST_PERSON,
+                intensityLevel = 8,
+                pacingConfig = PacingConfig(
+                    slowBuildupRatio = 0.35f,
+                    progressionRatio = 0.3f,
+                    climaxRatio = 0.2f,
+                    aftermathRatio = 0.15f,
+                    tensionPoints = 5,
+                    releasePoints = 1
+                )
+            ),
+            systemPromptAddition = """
+                【暗黑悬疑风格强化】
+                - 氛围压抑，每个场景都透着不安
+                - 不可靠叙事：主角的认知可能有偏差
+                - 每章至少一个疑点，线索碎片化分布
+                - 角色各怀鬼胎，言行不一
+                - 心理描写深入阴暗面
+                - 反转要有伏笔支撑，禁止天降信息
+                - 节奏在平静和惊悚间反复切换
+            """.trimIndent()
+        ),
+        
+        // 6. 轻松搞笑
+        GenerationPreset(
+            id = "comedy_fun",
+            name = "轻松搞笑",
+            description = "幽默为主，节奏轻快，反转逗趣",
+            icon = "😄",
+            sensoryProfile = SensoryProfile(
+                descriptionDensity = 5,
+                sensoryFocus = listOf(SensoryType.VISUAL, SensoryType.AUDITORY),
+                tabooLevel = TabooLevel.LIGHT,
+                intimateSceneIntensity = 2,
+                emotionExpressionStyle = EmotionStyle.EXPLICIT
+            ),
+            generationConfig = GenerationConfig(
+                rhythmPreference = RhythmPreference.FAST_PACED,
+                perspectiveMode = PerspectiveMode.FIRST_PERSON,
+                intensityLevel = 4,
+                pacingConfig = PacingConfig(
+                    slowBuildupRatio = 0.3f,
+                    progressionRatio = 0.35f,
+                    climaxRatio = 0.15f,
+                    aftermathRatio = 0.2f,
+                    tensionPoints = 2,
+                    releasePoints = 4
+                )
+            ),
+            systemPromptAddition = """
+                【轻松搞笑风格强化】
+                - 对话是核心，吐槽和金句频出
+                - 反转要出人意料但逻辑自洽
+                - 角色要有明显的性格标签，碰撞出笑点
+                - 严肃场景突然打破，制造反差萌
+                - 节奏明快，不要拖沓铺垫
+                - 生活化场景为主，接地气
+                - 禁止说教，用荒诞表达真理
+            """.trimIndent()
+        ),
+        
+        // 7. 日常治愈
         GenerationPreset(
             id = "daily_healing",
             name = "日常治愈",
@@ -204,7 +281,7 @@ object GenerationPresets {
             """.trimIndent()
         ),
         
-        // 6. 深度沉浸（原P0-P4增强版）
+        // 8. 深度沉浸
         GenerationPreset(
             id = "deep_immersive",
             name = "深度沉浸",
