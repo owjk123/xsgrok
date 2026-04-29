@@ -459,7 +459,7 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // 生成模式切换
+        // 生成引擎与预设
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -496,6 +496,43 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "叙事风格预设",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                val currentPresetId by viewModel.currentPresetId.collectAsState()
+                
+                val presets = listOf(
+                    "fast_hotblood" to "🔥 快节奏热血",
+                    "slow_delicate" to "🌙 慢热细腻",
+                    "mystery_detective" to "🔍 悬疑推理",
+                    "epic_fantasy" to "⚔️ 史诗奇幻",
+                    "daily_healing" to "☀️ 日常治愈",
+                    "deep_immersive" to "🌊 深度沉浸"
+                )
+                
+                presets.chunked(2).forEach { row ->
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        row.forEach { (id, label) ->
+                            FilterChip(
+                                selected = currentPresetId == id,
+                                onClick = { viewModel.setGenerationPreset(id) },
+                                label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 4.dp, bottom = 4.dp)
+                            )
+                        }
+                        if (row.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
             }
         }
         

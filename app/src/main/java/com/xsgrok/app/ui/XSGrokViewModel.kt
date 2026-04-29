@@ -4,8 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xsgrok.app.agent.AgentOrchestrator
-import com.xsgrok.app.agent.PlotController
 import com.xsgrok.app.agent.CharacterMindSystem
+import com.xsgrok.app.agent.GenerationPresets
+import com.xsgrok.app.agent.TimelineGuardian
+import com.xsgrok.app.prompt.AdvancedPromptBuilder
 import com.xsgrok.app.data.local.LocalStorage
 import com.xsgrok.app.data.model.*
 import com.xsgrok.app.data.remote.ApiService
@@ -24,6 +26,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     // Agent系统
     private val agentOrchestrator = AgentOrchestrator()
     private val characterMindSystem = CharacterMindSystem()
+    private val timelineGuardian = TimelineGuardian()
     
     private val _uiState = MutableStateFlow(XSGrokUiState())
     val uiState: StateFlow<XSGrokUiState> = _uiState.asStateFlow()
@@ -43,6 +46,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     // Agent生成阶段
     private val _agentStage = MutableStateFlow<AgentOrchestrator.GenerationStage?>(null)
     val agentStage: StateFlow<AgentOrchestrator.GenerationStage?> = _agentStage.asStateFlow()
+    
+    // 当前预设
+    private val _currentPresetId = MutableStateFlow("deep_immersive")
+    val currentPresetId: StateFlow<String> = _currentPresetId.asStateFlow()
     val streamingContent: StateFlow<String> = _streamingContent.asStateFlow()
     
     private val _isGenerating = MutableStateFlow(false)
@@ -1436,6 +1443,25 @@ ${if (isConvergence) "5. 【重要】本章必须推进主线结局，回收至�
     
     fun setGenerationMode(mode: String) {
         _generationMode.value = mode
+    }
+    
+    fun setGenerationPreset(presetId: String) {
+        _currentPresetId.value = presetId
+        val novel = _autoModeNovel.value ?: return
+        val updated = GenerationPresets.applyPreset(novel, presetId)
+        _autoModeNovel.value = updated
+    }
+    
+    // 用户实时指令注入
+    private var _userCommand: String? = null
+    fun injectUserCommand(command: String) {
+        _userCommand = command
+    }
+    
+    fun consumeUserCommand(): String? {
+        val cmd = _userCommand
+        _userCommand = null
+        return cmd
     }
     
     // ========== P1-P4 新增方法 ==========
