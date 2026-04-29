@@ -459,6 +459,48 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
         
         Spacer(modifier = Modifier.height(24.dp))
         
+        // 生成模式切换
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "生成引擎",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                val generationMode by viewModel.generationMode.collectAsState()
+                
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    FilterChip(
+                        selected = generationMode == "agent",
+                        onClick = { viewModel.setGenerationMode("agent") },
+                        label = { Text("Agent模式") },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    FilterChip(
+                        selected = generationMode == "single",
+                        onClick = { viewModel.setGenerationMode("single") },
+                        label = { Text("经典模式") }
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (generationMode == "agent") 
+                        "分层Agent系统：规划→执行→审查→润色，剧情更稳" 
+                    else 
+                        "经典单次生成，速度更快",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
         // 关于卡片
         Card(
             modifier = Modifier.fillMaxWidth(),

@@ -3,6 +3,9 @@ package com.xsgrok.app.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.xsgrok.app.agent.AgentOrchestrator
+import com.xsgrok.app.agent.PlotController
+import com.xsgrok.app.agent.CharacterMindSystem
 import com.xsgrok.app.data.local.LocalStorage
 import com.xsgrok.app.data.model.*
 import com.xsgrok.app.data.remote.ApiService
@@ -18,6 +21,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     private val localStorage = LocalStorage(application)
     private val apiService = ApiService()
     
+    // Agent系统
+    private val agentOrchestrator = AgentOrchestrator()
+    private val characterMindSystem = CharacterMindSystem()
+    
     private val _uiState = MutableStateFlow(XSGrokUiState())
     val uiState: StateFlow<XSGrokUiState> = _uiState.asStateFlow()
     
@@ -28,6 +35,14 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     val currentNovel: StateFlow<Novel?> = _currentNovel.asStateFlow()
     
     private val _streamingContent = MutableStateFlow("")
+    
+    // 生成模式: "single" = 单次生成, "agent" = 分层Agent生成
+    private val _generationMode = MutableStateFlow("agent")
+    val generationMode: StateFlow<String> = _generationMode.asStateFlow()
+    
+    // Agent生成阶段
+    private val _agentStage = MutableStateFlow<AgentOrchestrator.GenerationStage?>(null)
+    val agentStage: StateFlow<AgentOrchestrator.GenerationStage?> = _agentStage.asStateFlow()
     val streamingContent: StateFlow<String> = _streamingContent.asStateFlow()
     
     private val _isGenerating = MutableStateFlow(false)
@@ -992,6 +1007,12 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     keyNodes = keyNodes.toMutableList()  // P0：添加关键节点
                 )
                 
+                // 初始化Agent系统
+                agentOrchestrator.initializeFromOutline(novel)
+                novel.characters.forEach { char ->
+                    characterMindSystem.initializeCharacter(char, novel.type)
+                }
+                
                 // 保存到待审阅状态，进入审阅阶段
                 _autoModeNovel.value = novel
                 _autoModeState.value = AutoModeState.REVIEW
@@ -1411,6 +1432,12 @@ ${if (isConvergence) "5. 【重要】本章必须推进主线结局，回收至�
         """.trimIndent()
     }
 
+    // ========== 生成模式控制 ==========
+    
+    fun setGenerationMode(mode: String) {
+        _generationMode.value = mode
+    }
+    
     // ========== P1-P4 新增方法 ==========
     
     // P1: 更新感官配置
