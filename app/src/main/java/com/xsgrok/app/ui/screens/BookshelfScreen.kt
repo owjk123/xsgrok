@@ -71,6 +71,9 @@ fun BookshelfScreen(viewModel: XSGrokViewModel) {
                         onClick = { 
                             viewModel.selectNovel(novel.id)
                             viewModel.navigateTo(Screen.Reading)
+                        },
+                        onContinue = {
+                            viewModel.continueNovel(novel.id)
                         }
                     )
                 }
@@ -80,7 +83,7 @@ fun BookshelfScreen(viewModel: XSGrokViewModel) {
 }
 
 @Composable
-fun BookCard(novel: Novel, onClick: () -> Unit) {
+fun BookCard(novel: Novel, onClick: () -> Unit, onContinue: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -147,6 +150,20 @@ fun BookCard(novel: Novel, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Bug1修复：继续写作按钮
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = onContinue,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("继续写作", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
             }
         }
     }

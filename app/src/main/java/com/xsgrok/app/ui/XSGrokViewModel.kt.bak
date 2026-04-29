@@ -929,16 +929,12 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                         3. 风格（热血/轻松/黑暗/搞笑/温馨等）
                         4. 主角设定（姓名、性格、特殊能力等）
                         5. 详细大纲（500字左右，包含开头、发展、高潮、结局）
-                        6. 世界背景（世界观、历史、地理等，200字以上）
+                        6. 世界背景（世界观、历史、地理等）
                         7. 力量体系（修炼等级、能力划分等）
-                        8. 世界规则（社会规则、禁忌、特殊法则等，100字以上）
-                        9. 关键节点（8-10个故事关键转折点，每个一行，格式：节点标题|节点描述）
-                        10. 主要角色（至少3个，包含配角和反派）
-                        11. 重要地点（至少3个）
-                        12. 势力组织（至少2个）
+                        8. 关键节点（8-10个故事关键转折点，每个一行，格式：节点标题|节点描述）
                         
                         请严格按JSON格式输出，不要添加任何其他内容：
-                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"详细大纲\n关键节点：\n1. 开篇\n2. 矛盾初现\n3. 危机升级...","worldBackground":"世界背景","powerSystem":"力量体系","worldRules":"世界规则","characters":[{"name":"角色名","description":"描述","role":"主角/配角/反派","appearance":"外貌","personality":"性格","background":"背景","abilities":"能力","relationships":"关系"}],"locations":[{"name":"地名","description":"描述","type":"城市/荒野/秘境","significance":"重要性"}],"factions":[{"name":"势力名","description":"描述","leader":"首领","goals":"目标","relationships":"与其他势力关系"}]}
+                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"详细大纲\n关键节点：\n1. 开篇\n2. 矛盾初现\n3. 危机升级...","worldBackground":"世界背景","powerSystem":"力量体系"}
                     """.trimIndent()
                 ).collect { content ->
                     if (content.startsWith("[ERROR]")) {
@@ -966,28 +962,15 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 val outlineText = extractField(outlineResult, "outline") ?: outlineResult
                 val keyNodes = parseKeyNodesFromOutline(outlineText)
                 
-                // 解析角色数组
-                val characters = parseCharacterArray(outlineResult)
-                
-                // 解析地点数组
-                val locations = parseLocationArray(outlineResult)
-                
-                // 解析势力数组
-                val factions = parseFactionArray(outlineResult)
-                
                 val novel = Novel(
                     title = extractField(outlineResult, "title") ?: "未命名小说",
                     type = extractField(outlineResult, "type") ?: "玄幻",
                     style = extractField(outlineResult, "style") ?: "热血",
                     mainCharacter = extractField(outlineResult, "mainCharacter") ?: "主角",
                     outline = outlineText,
-                    characters = characters.toMutableList(),
                     worldBuilding = WorldBuilding(
                         worldBackground = extractField(outlineResult, "worldBackground") ?: "",
-                        powerSystem = extractField(outlineResult, "powerSystem") ?: "",
-                        geography = locations.toMutableList(),
-                        factions = factions.toMutableList(),
-                        rules = extractField(outlineResult, "worldRules") ?: ""
+                        powerSystem = extractField(outlineResult, "powerSystem") ?: ""
                     ),
                     keyNodes = keyNodes.toMutableList()  // P0：添加关键节点
                 )
@@ -1180,119 +1163,11 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         _streamingContent.value = ""
     }
     
-    // Bug1修复：从书架继续写作
-    fun continueNovel(novelId: String) {
-        viewModelScope.launch {
-            val novel = localStorage.getNovel(novelId) ?: return@launch
-            _currentNovel.value = novel
-            _autoModeNovel.value = novel
-            _autoModeState.value = AutoModeState.REVIEW
-            _uiState.value = _uiState.value.copy(currentScreen = Screen.AutoMode)
-        }
-    }
-    
     fun retryAutoMode() {
         // 保持当前小说数据，重置到审阅状态
         _autoModeState.value = AutoModeState.REVIEW
         _isGenerating.value = false
         _streamingContent.value = ""
-    }
-    
-    // ========== 数组解析方法 ==========
-    
-    private fun parseCharacterArray(text: String): List<Character> {
-        val characters = mutableListOf<Character>()
-        try {
-            val arrayPattern = """"characters"\s*:\s*\[""".toRegex()
-            val arrayMatch = arrayPattern.find(text) ?: return characters
-            val arrayStart = arrayMatch.range.first
-            var depth = 0
-            var arrayEnd = arrayStart
-            for (i in arrayStart until text.length) {
-                if (text[i] == '[') depth++
-                else if (text[i] == ']') {
-                    depth--
-                    if (depth == 0) { arrayEnd = i + 1; break }
-                }
-            }
-            val arrayText = text.substring(arrayStart, arrayEnd)
-            val objPattern = """\{[^{}]*"name"\s*:\s*"([^"]+)"[^{}]*\}""".toRegex(RegexOption.DOT_MATCHES_ALL)
-            objPattern.findAll(arrayText).forEach { match ->
-                val objText = match.value
-                characters.add(Character(
-                    name = extractField(objText, "name") ?: "未命名",
-                    description = extractField(objText, "description") ?: "",
-                    role = extractField(objText, "role") ?: "配角",
-                    appearance = extractField(objText, "appearance") ?: "",
-                    personality = extractField(objText, "personality") ?: "",
-                    background = extractField(objText, "background") ?: "",
-                    abilities = extractField(objText, "abilities") ?: "",
-                    relationships = extractField(objText, "relationships") ?: ""
-                ))
-            }
-        } catch (e: Exception) { }
-        return characters
-    }
-    
-    private fun parseLocationArray(text: String): List<Location> {
-        val locations = mutableListOf<Location>()
-        try {
-            val arrayPattern = """"locations"\s*:\s*\[""".toRegex()
-            val arrayMatch = arrayPattern.find(text) ?: return locations
-            val arrayStart = arrayMatch.range.first
-            var depth = 0
-            var arrayEnd = arrayStart
-            for (i in arrayStart until text.length) {
-                if (text[i] == '[') depth++
-                else if (text[i] == ']') {
-                    depth--
-                    if (depth == 0) { arrayEnd = i + 1; break }
-                }
-            }
-            val arrayText = text.substring(arrayStart, arrayEnd)
-            val objPattern = """\{[^{}]*"name"\s*:\s*"([^"]+)"[^{}]*\}""".toRegex(RegexOption.DOT_MATCHES_ALL)
-            objPattern.findAll(arrayText).forEach { match ->
-                val objText = match.value
-                locations.add(Location(
-                    name = extractField(objText, "name") ?: "未命名",
-                    description = extractField(objText, "description") ?: "",
-                    type = extractField(objText, "type") ?: "",
-                    significance = extractField(objText, "significance") ?: ""
-                ))
-            }
-        } catch (e: Exception) { }
-        return locations
-    }
-    
-    private fun parseFactionArray(text: String): List<Faction> {
-        val factions = mutableListOf<Faction>()
-        try {
-            val arrayPattern = """"factions"\s*:\s*\[""".toRegex()
-            val arrayMatch = arrayPattern.find(text) ?: return factions
-            val arrayStart = arrayMatch.range.first
-            var depth = 0
-            var arrayEnd = arrayStart
-            for (i in arrayStart until text.length) {
-                if (text[i] == '[') depth++
-                else if (text[i] == ']') {
-                    depth--
-                    if (depth == 0) { arrayEnd = i + 1; break }
-                }
-            }
-            val arrayText = text.substring(arrayStart, arrayEnd)
-            val objPattern = """\{[^{}]*"name"\s*:\s*"([^"]+)"[^{}]*\}""".toRegex(RegexOption.DOT_MATCHES_ALL)
-            objPattern.findAll(arrayText).forEach { match ->
-                val objText = match.value
-                factions.add(Faction(
-                    name = extractField(objText, "name") ?: "未命名",
-                    description = extractField(objText, "description") ?: "",
-                    leader = extractField(objText, "leader") ?: "",
-                    goals = extractField(objText, "goals") ?: "",
-                    relationships = extractField(objText, "relationships") ?: ""
-                ))
-            }
-        } catch (e: Exception) { }
-        return factions
     }
     
     // ========== 辅助方法 ==========

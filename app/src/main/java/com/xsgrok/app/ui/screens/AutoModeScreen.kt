@@ -537,14 +537,25 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    // 确认按钮
-                    Button(
-                        onClick = { viewModel.confirmAndStartWriting() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("确认并开始写作")
+                    // 确认按钮 - Bug1修复：区分新建和继续写作
+                    if (autoModeNovel?.chapters?.isNotEmpty() == true) {
+                        Button(
+                            onClick = { viewModel.confirmAndStartWriting() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("继续写下一章")
+                        }
+                    } else {
+                        Button(
+                            onClick = { viewModel.confirmAndStartWriting() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("确认并开始写作")
+                        }
                     }
                     
                     Spacer(modifier = Modifier.height(8.dp))
