@@ -706,6 +706,37 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                             }
                         }
                         
+                        // 用户实时指令注入
+                        Spacer(modifier = Modifier.height(8.dp))
+                        var userCommand by remember { mutableStateOf("") }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = userCommand,
+                                onValueChange = { userCommand = it },
+                                placeholder = { Text("⚡ 注入剧情指令（最高优先级）") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                supportingText = { Text("例：让主角发现真相 / 角色必须受伤", style = MaterialTheme.typography.labelSmall) }
+                            )
+                            
+                            OutlinedButton(
+                                onClick = {
+                                    if (userCommand.isNotBlank()) {
+                                        viewModel.injectUserCommand(userCommand)
+                                        userCommand = ""
+                                    }
+                                },
+                                enabled = userCommand.isNotBlank()
+                            ) {
+                                Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("注入")
+                            }
+                        }
+                        
                         Spacer(modifier = Modifier.height(8.dp))
                         
                         Row(
