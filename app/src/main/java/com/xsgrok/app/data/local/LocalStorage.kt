@@ -32,8 +32,8 @@ class LocalStorage(private val context: Context) {
     val apiConfig: Flow<ApiConfig> = context.dataStore.data.map { prefs ->
         ApiConfig(
             apiKey = prefs[API_KEY] ?: "",
-            endpoint = prefs[API_ENDPOINT] ?: "https://api.apiyi.com/v1",
-            model = prefs[API_MODEL] ?: "grok-4.20-beta",
+            endpoint = prefs[API_ENDPOINT] ?: "https://api.edgefn.net/v1",
+            model = prefs[API_MODEL] ?: "GLM-5.1",
             isDarkMode = prefs[DARK_MODE] ?: false
         )
     }

@@ -112,8 +112,8 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 style = style,
                 mainCharacter = mainCharacter
             )
-            localStorage.saveNovel(updatedNovel)
-            _currentNovel.value = updatedNovel
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
             _uiState.value = _uiState.value.copy(currentScreen = Screen.NovelDetail)
         }
     }
@@ -121,8 +121,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     fun selectNovel(novelId: String) {
         viewModelScope.launch {
             val novel = localStorage.getNovel(novelId)
-            _currentNovel.value = updatedNovel
-            _uiState.value = _uiState.value.copy(currentScreen = Screen.NovelDetail)
+            if (novel != null) {
+                _currentNovel.value = novel
+                _uiState.value = _uiState.value.copy(currentScreen = Screen.NovelDetail)
+            }
         }
     }
     
@@ -164,7 +166,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             val novel = localStorage.getNovel(novelId) ?: return@launch
             val newCharacter = Character(name = name, description = description, role = role)
-            novel.characters.add(newCharacter)
+            val updatedNovel = novel.copy(
+                characters = (novel.characters + newCharacter).toMutableList(),
+                updatedAt = System.currentTimeMillis()
+            )
             localStorage.saveNovel(updatedNovel)
             _currentNovel.value = updatedNovel
         }
@@ -173,7 +178,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     fun deleteCharacter(novelId: String, characterId: String) {
         viewModelScope.launch {
             val novel = localStorage.getNovel(novelId) ?: return@launch
-            novel.characters.removeAll { it.id == characterId }
+            val updatedNovel = novel.copy(
+                characters = novel.characters.filter { it.id != characterId }.toMutableList(),
+                updatedAt = System.currentTimeMillis()
+            )
             localStorage.saveNovel(updatedNovel)
             _currentNovel.value = updatedNovel
         }
@@ -182,12 +190,12 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     fun updateCharacter(novelId: String, character: Character) {
         viewModelScope.launch {
             val novel = localStorage.getNovel(novelId) ?: return@launch
-            val index = novel.characters.indexOfFirst { it.id == character.id }
-            if (index >= 0) {
-                novel.characters[index] = character
-                localStorage.saveNovel(updatedNovel)
-                _currentNovel.value = updatedNovel
-            }
+            val updatedNovel = novel.copy(
+                characters = novel.characters.map { if (it.id == character.id) character else it }.toMutableList(),
+                updatedAt = System.currentTimeMillis()
+            )
+            localStorage.saveNovel(updatedNovel)
+            _currentNovel.value = updatedNovel
         }
     }
     
@@ -195,7 +203,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     fun continueNovel(novelId: String) {
         viewModelScope.launch {
             val novel = localStorage.getNovel(novelId) ?: return@launch
-            _currentNovel.value = updatedNovel
+            _currentNovel.value = novel
             _uiState.value = _uiState.value.copy(currentScreen = Screen.Reading)
         }
     }
@@ -252,7 +260,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                         content = fullContent.toString(),
                         order = chapterNum
                     )
-                    novel.chapters.add(chapter)
+                    val updatedNovel = novel.copy(
+                        chapters = (novel.chapters + chapter).toMutableList(),
+                        updatedAt = System.currentTimeMillis()
+                    )
                     localStorage.saveNovel(updatedNovel)
                     _currentNovel.value = updatedNovel
                 }
@@ -315,7 +326,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                         content = fullContent.toString(),
                         order = chapterNum
                     )
-                    novel.chapters.add(chapter)
+                    val updatedNovel = novel.copy(
+                        chapters = (novel.chapters + chapter).toMutableList(),
+                        updatedAt = System.currentTimeMillis()
+                    )
                     localStorage.saveNovel(updatedNovel)
                     _currentNovel.value = updatedNovel
                 }
@@ -407,8 +421,8 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             title = "新小说",
             mainCharacter = idea
         )
-        localStorage.saveNovel(updatedNovel)
-        _currentNovel.value = updatedNovel
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
         return novel
     }
     
