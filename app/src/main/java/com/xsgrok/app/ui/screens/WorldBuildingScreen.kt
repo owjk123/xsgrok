@@ -285,6 +285,7 @@ fun CharacterCard(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun AddCharacterDialog(
     onDismiss: () -> Unit,
     onConfirm: (String, String, String) -> Unit
@@ -365,6 +366,7 @@ fun AddCharacterDialog(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun EditCharacterDialog(
     character: Character,
     onDismiss: () -> Unit,

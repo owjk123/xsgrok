@@ -483,13 +483,15 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     // ========== 兼容性方法 ==========
-    val generationMode: StateFlow<String> = MutableStateFlow("single")
+    private val _generationMode = MutableStateFlow("single")
+    val generationMode: StateFlow<String> = _generationMode.asStateFlow()
     
     fun setGenerationMode(mode: String) {
-        // 兼容性方法
+        _generationMode.value = mode
     }
     
-    val currentPresetId: StateFlow<String> = MutableStateFlow("balanced")
+    private val _currentPresetId = MutableStateFlow("balanced")
+    val currentPresetId: StateFlow<String> = _currentPresetId.asStateFlow()
     
     // ========== 错误处理 ==========
     fun clearError() {

@@ -82,7 +82,7 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                     Button(
                         onClick = {
                             if (chapterTitle.isNotBlank()) {
-                                viewModel.generateChapter(chapterTitle)
+                                viewModel.generateChapter(novel.id, chapterTitle)
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -95,7 +95,7 @@ fun ChapterGenerationScreen(viewModel: XSGrokViewModel) {
                     
                     if (showContinueOption) {
                         FilledTonalButton(
-                            onClick = { viewModel.continueChapter() },
+                            onClick = { viewModel.continueChapter(novel.id, null) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Default.Refresh, contentDescription = null)

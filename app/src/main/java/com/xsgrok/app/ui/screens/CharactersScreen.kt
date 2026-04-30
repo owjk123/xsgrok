@@ -78,7 +78,7 @@ fun CharactersScreen(viewModel: XSGrokViewModel) {
                     items(novel.characters) { character ->
                         CharacterCard(
                             character = character,
-                            onDelete = { viewModel.deleteCharacter(character.id) }
+                            onDelete = { viewModel.deleteCharacter(novel.id, character.id) }
                         )
                     }
                 }
@@ -143,7 +143,7 @@ fun CharactersScreen(viewModel: XSGrokViewModel) {
                     TextButton(
                         onClick = {
                             if (characterName.isNotBlank()) {
-                                viewModel.addCharacter(characterName, characterDescription, characterRole)
+                                viewModel.addCharacter(novel.id, characterName, characterDescription, characterRole)
                                 characterName = ""
                                 characterDescription = ""
                                 characterRole = "Supporting"
