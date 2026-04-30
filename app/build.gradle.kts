@@ -11,15 +11,29 @@ android {
         applicationId = "com.xsgrok.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 7
-        versionName = "2.3.2"
+        versionCode = 8
+        versionName = "2.4.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
+    signingConfigs {
+        create("release") {
+            val ksFile = System.getenv("KEYSTORE_FILE") ?: "../keystore/xsgrok.jks"
+            storeFile = file(ksFile)
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "xsgrok2024"
+            keyAlias = System.getenv("KEY_ALIAS") ?: "xsgrok"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "xsgrok2024"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

@@ -1358,8 +1358,11 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     // ========== 辅助方法 ==========
     
     private fun extractField(text: String, field: String): String? {
-        val pattern = """"$field"\s*:\s*"([^"]+)"""".toRegex()
-        return pattern.find(text)?.groupValues?.getOrNull(1)
+        // 支持多行文本：先尝试匹配引号内的内容（含转义换行符）
+        val singleLinePattern = """"$field"\s*:\s*"((?:[^"\\]|\\.)*)"""".toRegex()
+        val result = singleLinePattern.find(text)?.groupValues?.getOrNull(1)
+        // 将JSON转义的换行符替换为真实换行
+        return result?.replace("\\n", "\n")?.replace("\\t", "\t")
     }
     
     private fun buildChapterSystemPrompt(novel: Novel): String {
