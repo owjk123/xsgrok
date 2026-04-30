@@ -122,7 +122,7 @@ fun NovelCard(
                 Row {
                     AssistChip(
                         onClick = {},
-                        label = { Text(novel.type, style = MaterialTheme.typography.labelSmall) },
+                        label = { Text(novel.genre, style = MaterialTheme.typography.labelSmall) },
                         modifier = Modifier.padding(end = 4.dp)
                     )
                     AssistChip(

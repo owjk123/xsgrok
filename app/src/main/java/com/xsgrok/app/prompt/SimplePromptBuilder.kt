@@ -1,5 +1,6 @@
 package com.xsgrok.app.prompt
 
+import com.xsgrok.app.data.model.Chapter
 import com.xsgrok.app.data.model.Novel
 import com.xsgrok.app.data.model.GenerationPreset
 

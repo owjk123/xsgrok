@@ -70,6 +70,11 @@
     <string name="chapter_num">Chapter %1$d</string>
     <string name="close">Close</string>
     <string name="words_count">%1$d words</string>
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="chapter_list">Chapter List</string>
+    <string name="prev_chapter">Previous</string>
+    <string name="next_chapter">Next</string>
 
     <!-- Bookshelf -->
     <string name="no_books">No books yet</string>
@@ -83,6 +88,11 @@
     <string name="power_system_hint">如：修炼等级/感情线框架/社会阶层/科技体系等，无则留空</string>
     <string name="world_rules">World Rules</string>
     <string name="world_rules_hint">Special rules of this world...</string>
+    <string name="locations">Locations</string>
+    <string name="factions">Factions</string>
+    <string name="items">Items</string>
+    <string name="skills">Skills</string>
+    <string name="timeline">Timeline</string>
     <string name="ai_generate">AI Generate</string>
     <string name="ai_generate_world">AI Generate World Setting</string>
     <string name="edit">Edit</string>
@@ -119,6 +129,7 @@
     <string name="toggle_visibility">Toggle visibility</string>
     <string name="model">Model</string>
     <string name="app_description">AI-powered novel generation app</string>
+    <string name="appearance">Appearance</string>
 
     <!-- Drafts -->
     <string name="no_drafts">No drafts</string>

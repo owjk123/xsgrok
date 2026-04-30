@@ -16,7 +16,6 @@ import kotlinx.coroutines.launch
 /**
  * 精简版ViewModel - 第一性原理优化
  * 职责：UI状态管理 + 用户意图分发
- * 移除：复杂的多阶段生成逻辑、Agent编排、状态追踪
  */
 class XSGrokViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -171,11 +170,178 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
+    fun deleteCharacter(novelId: String, characterId: String) {
+        viewModelScope.launch {
+            val novel = localStorage.getNovel(novelId) ?: return@launch
+            novel.characters.removeAll { it.id == characterId }
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    fun updateCharacter(novelId: String, character: Character) {
+        viewModelScope.launch {
+            val novel = localStorage.getNovel(novelId) ?: return@launch
+            val index = novel.characters.indexOfFirst { it.id == character.id }
+            if (index >= 0) {
+                novel.characters[index] = character
+                localStorage.saveNovel(novel)
+                _currentNovel.value = novel
+            }
+        }
+    }
+    
+    // ========== 继续写作（从书架） ==========
+    fun continueNovel(novelId: String) {
+        viewModelScope.launch {
+            val novel = localStorage.getNovel(novelId) ?: return@launch
+            _currentNovel.value = novel
+            _uiState.value = _uiState.value.copy(currentScreen = Screen.Reading)
+        }
+    }
+    
+    // ========== 章节生成 ==========
+    fun generateChapter(novelId: String, chapterTitle: String?) {
+        if (_isGenerating.value) return
+        
+        viewModelScope.launch {
+            val novel = localStorage.getNovel(novelId) ?: return@launch
+            
+            _isGenerating.value = true
+            _streamingContent.value = ""
+            _errorMessage.value = null
+            
+            try {
+                val chapterNum = novel.chapters.size + 1
+                val title = chapterTitle ?: "第${chapterNum}章"
+                
+                val (systemPrompt, userPrompt) = SimplePromptBuilder.buildChapterPrompt(
+                    novel = novel,
+                    chapterNum = chapterNum,
+                    userGuide = null,
+                    preset = _currentPreset.value
+                )
+                
+                val apiConfig = _uiState.value.apiConfig
+                if (apiConfig.apiKey.isBlank()) {
+                    _errorMessage.value = "请先设置API Key"
+                    return@launch
+                }
+                
+                val fullContent = StringBuilder()
+                apiService.generateContent(
+                    apiKey = apiConfig.apiKey,
+                    endpoint = apiConfig.endpoint,
+                    model = apiConfig.model,
+                    systemPrompt = systemPrompt,
+                    userPrompt = userPrompt,
+                    temperature = _currentPreset.value.temperature
+                ).collect { chunk ->
+                    if (chunk.startsWith("[ERROR]")) {
+                        _errorMessage.value = chunk
+                    } else {
+                        fullContent.append(chunk)
+                        _streamingContent.value = fullContent.toString()
+                    }
+                }
+                
+                // 保存章节
+                if (fullContent.isNotEmpty()) {
+                    val chapter = Chapter(
+                        title = title,
+                        content = fullContent.toString(),
+                        order = chapterNum
+                    )
+                    novel.chapters.add(chapter)
+                    localStorage.saveNovel(novel)
+                    _currentNovel.value = novel
+                }
+                
+            } catch (e: Exception) {
+                _errorMessage.value = "生成失败: ${e.message}"
+            } finally {
+                _isGenerating.value = false
+            }
+        }
+    }
+    
+    fun continueChapter(novelId: String, guide: String?) {
+        if (_isGenerating.value) return
+        
+        viewModelScope.launch {
+            val novel = localStorage.getNovel(novelId) ?: return@launch
+            
+            _isGenerating.value = true
+            _streamingContent.value = ""
+            _errorMessage.value = null
+            
+            try {
+                val chapterNum = novel.chapters.size + 1
+                
+                val (systemPrompt, userPrompt) = SimplePromptBuilder.buildChapterPrompt(
+                    novel = novel,
+                    chapterNum = chapterNum,
+                    userGuide = guide,
+                    preset = _currentPreset.value
+                )
+                
+                val apiConfig = _uiState.value.apiConfig
+                if (apiConfig.apiKey.isBlank()) {
+                    _errorMessage.value = "请先设置API Key"
+                    return@launch
+                }
+                
+                val fullContent = StringBuilder()
+                apiService.generateContent(
+                    apiKey = apiConfig.apiKey,
+                    endpoint = apiConfig.endpoint,
+                    model = apiConfig.model,
+                    systemPrompt = systemPrompt,
+                    userPrompt = userPrompt,
+                    temperature = _currentPreset.value.temperature
+                ).collect { chunk ->
+                    if (chunk.startsWith("[ERROR]")) {
+                        _errorMessage.value = chunk
+                    } else {
+                        fullContent.append(chunk)
+                        _streamingContent.value = fullContent.toString()
+                    }
+                }
+                
+                // 保存章节
+                if (fullContent.isNotEmpty()) {
+                    val chapter = Chapter(
+                        title = "第${chapterNum}章",
+                        content = fullContent.toString(),
+                        order = chapterNum
+                    )
+                    novel.chapters.add(chapter)
+                    localStorage.saveNovel(novel)
+                    _currentNovel.value = novel
+                }
+                
+            } catch (e: Exception) {
+                _errorMessage.value = "生成失败: ${e.message}"
+            } finally {
+                _isGenerating.value = false
+            }
+        }
+    }
+    
+    // ========== AI生成辅助 ==========
+    fun generateWorldBuilding(novelId: String, prompt: String) {
+        // 简化实现：暂不支持
+    }
+    
+    fun generateCharacters(novelId: String, prompt: String) {
+        // 简化实现：暂不支持
+    }
+    
+    fun addCharacterFull(novelId: String, name: String, role: String, description: String) {
+        addCharacter(novelId, name, description, role)
+    }
+    
     // ========== 自动模式核心流程 ==========
-    /**
-     * 开始全自动生成流程
-     * 简化版：输入想法 → 一键生成 → 阅读/续写
-     */
     fun startAutoMode(userPrompt: String) {
         if (_isGenerating.value) return
         
@@ -186,11 +352,9 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             _errorMessage.value = null
             
             try {
-                // 如果还没有小说，创建一个
                 val novel = _currentNovel.value ?: createTempNovel(userPrompt)
                 val chapterNum = novel.chapters.size + 1
                 
-                // 构建Prompt
                 val (systemPrompt, userPromptText) = SimplePromptBuilder.buildChapterPrompt(
                     novel = novel,
                     chapterNum = chapterNum,
@@ -198,7 +362,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     preset = _currentPreset.value
                 )
                 
-                // 调用API
                 val apiConfig = _uiState.value.apiConfig
                 if (apiConfig.apiKey.isBlank()) {
                     _errorMessage.value = "请先设置API Key"
@@ -207,7 +370,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     return@launch
                 }
                 
-                // 流式收集生成内容
                 val fullContent = StringBuilder()
                 apiService.generateContent(
                     apiKey = apiConfig.apiKey,
@@ -225,7 +387,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     }
                 }
                 
-                // 保存章节
                 if (fullContent.isNotEmpty()) {
                     saveChapter(novel, chapterNum, fullContent.toString())
                 }
@@ -241,9 +402,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    /**
-     * 从一句话创意创建临时小说
-     */
     private suspend fun createTempNovel(idea: String): Novel {
         val novel = Novel(
             title = "新小说",
@@ -254,19 +412,14 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         return novel
     }
     
-    /**
-     * 保存生成的章节
-     */
     private suspend fun saveChapter(novel: Novel, chapterNum: Int, content: String) {
-        // 尝试提取章节标题
         val title = extractChapterTitle(content, chapterNum)
         val cleanContent = cleanChapterContent(content, title)
         
         val chapter = Chapter(
             title = title,
             content = cleanContent,
-            order = chapterNum,
-            summary = "" // 可以后续调用API生成摘要
+            order = chapterNum
         )
         
         novel.chapters.add(chapter)
@@ -275,11 +428,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         _currentNovel.value = novel
     }
     
-    /**
-     * 从内容中提取章节标题
-     */
     private fun extractChapterTitle(content: String, defaultNum: Int): String {
-        // 尝试匹配常见标题格式
         val patterns = listOf(
             Regex("""第[一二三四五六七八九十百千万\\d]+章[：:](.+)"""),
             Regex("""^第[一二三四五六七八九十百千万\\d]+章\s*(.+)""", RegexOption.MULTILINE),
@@ -299,50 +448,30 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         return "第${defaultNum}章"
     }
     
-    /**
-     * 清理章节内容（去除标题重复等）
-     */
     private fun cleanChapterContent(content: String, title: String): String {
         var cleaned = content
-        
-        // 移除标题行的重复
-        if (title != "第${_currentNovel.value?.chapters?.size?.plus(1) ?: 1}章") {
-            val titlePattern = Regex("""第[一二三四五六七八九十百千万\\d]+章[：:].+""")
-            cleaned = cleaned.replaceFirst(titlePattern, "")
-        }
-        
+        val titlePattern = Regex("""第[一二三四五六七八九十百千万\\d]+章[：:].+""")
+        cleaned = cleaned.replaceFirst(titlePattern, "")
         return cleaned.trim()
     }
     
-    /**
-     * 继续生成下一章
-     */
     fun continueAutoMode(nextGuide: String?) {
         val novel = _currentNovel.value ?: return
         startAutoMode(nextGuide ?: "")
     }
     
-    /**
-     * 停止生成
-     */
     fun stopGeneration() {
         generationJob?.cancel()
         _isGenerating.value = false
         _autoModeState.value = AutoModeState.IDLE
     }
     
-    /**
-     * 重置自动模式
-     */
     fun resetAutoMode() {
         _autoModeState.value = AutoModeState.IDLE
         _streamingContent.value = ""
         _errorMessage.value = null
     }
     
-    /**
-     * 完成自动模式
-     */
     fun finishAutoMode() {
         _autoModeState.value = AutoModeState.COMPLETED
         navigateTo(Screen.Reading)
@@ -352,6 +481,15 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     fun setGenerationPreset(presetId: String) {
         _currentPreset.value = GenerationPresets.getById(presetId)
     }
+    
+    // ========== 兼容性方法 ==========
+    val generationMode: StateFlow<String> = MutableStateFlow("single")
+    
+    fun setGenerationMode(mode: String) {
+        // 兼容性方法
+    }
+    
+    val currentPresetId: StateFlow<String> = MutableStateFlow("balanced")
     
     // ========== 错误处理 ==========
     fun clearError() {

@@ -50,7 +50,7 @@ fun NovelDetailScreen(viewModel: XSGrokViewModel) {
                     Row {
                         AssistChip(
                             onClick = {},
-                            label = { Text(novel.type) }
+                            label = { Text(novel.genre) }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         AssistChip(

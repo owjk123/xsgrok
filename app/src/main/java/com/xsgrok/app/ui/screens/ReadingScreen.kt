@@ -211,7 +211,7 @@ private fun exportNovel(context: Context, novel: Novel) {
         val content = buildString {
             appendLine("《${novel.title}》")
             appendLine()
-            appendLine("类型：${novel.type}  风格：${novel.style}")
+            appendLine("类型：${novel.genre}  风格：${novel.style}")
             appendLine()
             appendLine("---")
             appendLine()
