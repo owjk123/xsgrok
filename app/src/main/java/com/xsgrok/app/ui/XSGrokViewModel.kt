@@ -3,54 +3,39 @@ package com.xsgrok.app.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.xsgrok.app.agent.AgentOrchestrator
-import com.xsgrok.app.agent.CharacterMindSystem
-import com.xsgrok.app.agent.GenerationPresets
-import com.xsgrok.app.agent.TimelineGuardian
-import com.xsgrok.app.prompt.AdvancedPromptBuilder
 import com.xsgrok.app.data.local.LocalStorage
 import com.xsgrok.app.data.model.*
 import com.xsgrok.app.data.remote.ApiService
-import com.xsgrok.app.ui.screens.AutoModeState
+import com.xsgrok.app.prompt.SimplePromptBuilder
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * 精简版ViewModel - 第一性原理优化
+ * 职责：UI状态管理 + 用户意图分发
+ * 移除：复杂的多阶段生成逻辑、Agent编排、状态追踪
+ */
 class XSGrokViewModel(application: Application) : AndroidViewModel(application) {
     
     private val localStorage = LocalStorage(application)
     private val apiService = ApiService()
     
-    // Agent系统
-    private val agentOrchestrator = AgentOrchestrator()
-    private val characterMindSystem = CharacterMindSystem()
-    private val timelineGuardian = TimelineGuardian()
-    
+    // ========== UI状态 ==========
     private val _uiState = MutableStateFlow(XSGrokUiState())
     val uiState: StateFlow<XSGrokUiState> = _uiState.asStateFlow()
     
+    // ========== 数据状态 ==========
     private val _novels = MutableStateFlow<List<Novel>>(emptyList())
     val novels: StateFlow<List<Novel>> = _novels.asStateFlow()
     
     private val _currentNovel = MutableStateFlow<Novel?>(null)
     val currentNovel: StateFlow<Novel?> = _currentNovel.asStateFlow()
     
+    // ========== 生成状态 ==========
     private val _streamingContent = MutableStateFlow("")
-    
-    // 生成模式: "single" = 单次生成, "agent" = 分层Agent生成
-    private val _generationMode = MutableStateFlow("agent")
-    val generationMode: StateFlow<String> = _generationMode.asStateFlow()
-    
-    // Agent生成阶段
-    private val _agentStage = MutableStateFlow<AgentOrchestrator.GenerationStage?>(null)
-    val agentStage: StateFlow<AgentOrchestrator.GenerationStage?> = _agentStage.asStateFlow()
-    
-    // 当前预设
-    private val _currentPresetId = MutableStateFlow("deep_immersive")
-    val currentPresetId: StateFlow<String> = _currentPresetId.asStateFlow()
     val streamingContent: StateFlow<String> = _streamingContent.asStateFlow()
     
     private val _isGenerating = MutableStateFlow(false)
@@ -62,138 +47,13 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     private val _autoModeState = MutableStateFlow(AutoModeState.IDLE)
     val autoModeState: StateFlow<AutoModeState> = _autoModeState.asStateFlow()
     
-    // 全自动模式待审阅的小说
-    private val _autoModeNovel = MutableStateFlow<Novel?>(null)
-    val autoModeNovel: StateFlow<Novel?> = _autoModeNovel.asStateFlow()
+    // ========== 当前配置 ==========
+    private val _currentPreset = MutableStateFlow(GenerationPresets.BALANCED)
+    val currentPreset: StateFlow<GenerationPreset> = _currentPreset.asStateFlow()
     
     private var generationJob: Job? = null
     
-
-    // ========== P0功能：温度计算和去AI味提示 ==========
-    
-    /**
-     * 根据章节进度计算动态temperature
-     * 开场章 0.85~0.95：高创意
-     * 推进章 0.7~0.8：平衡
-     * 收束章 0.6~0.7：确定性
-     */
-    private fun calculateTemperature(chapterNum: Int, totalNodes: Int): Float {
-        if (totalNodes <= 0) return 0.75f
-        
-        val progress = chapterNum.toFloat() / totalNodes
-        return when {
-            progress < 0.2f -> 0.9f   // 开场
-            progress < 0.8f -> 0.75f  // 推进
-            else -> 0.65f             // 收束
-        }
-    }
-    
-    /**
-     * 获取去AI味的写作提示
-     */
-    private fun getAntiAIWritingHints(): String {
-        return """
-【写作要求（严格遵守）】
-1. 段落长度必须有变化：每章至少一个长段落（8句以上），多个极短段落（1-2句）
-2. 禁止句式重复：同一段落内相同句式结构不超过2次
-3. 禁止心理总结：用具体动作、细节代替
-   - 错误：「他很愤怒」
-   - 正确：「把烟头摁进掌心，烟灰簌簌落下」
-4. 对话要自然：夹杂语气词、打断、省略，不要工整的一问一答
-5. 场景描写要粗糙：不要面面俱到，留白给读者想象
-""".trimIndent()
-    }
-    
-    /**
-     * 生成关键节点（8~12个）
-     */
-    private fun parseKeyNodesFromOutline(outline: String): List<KeyNode> {
-        val nodes = mutableListOf<KeyNode>()
-        val lines = outline.lines().filter { it.isNotBlank() }
-        
-        for ((index, line) in lines.withIndex()) {
-            val trimmed = line.trim()
-            // 尝试解析节点（格式：1. 标题 或 【标题】 等）
-            val title = when {
-                trimmed.matches(Regex("""^\d+[.、].+""")) -> trimmed.replace(Regex("""^\d+[.、]\s*"""), "")
-                trimmed.startsWith("【") && trimmed.endsWith("】") -> trimmed.drop(1).dropLast(1)
-                trimmed.startsWith("[") && trimmed.endsWith("]") -> trimmed.drop(1).dropLast(1)
-                trimmed.length > 5 && index < 15 -> trimmed.take(50)
-                else -> null
-            }
-            
-            if (title != null && title.length >= 2) {
-                nodes.add(KeyNode(
-                    title = title,
-                    description = trimmed,
-                    targetChapter = (index + 1) * 2  // 预估每2章一个节点
-                ))
-            }
-            
-            if (nodes.size >= 10) break  // 最多10个节点
-        }
-        
-        // 如果解析失败，生成默认节点
-        if (nodes.isEmpty()) {
-            listOf("开篇", "矛盾初现", "危机升级", "转折点", "高潮", "结局").forEachIndexed { i, title ->
-                nodes.add(KeyNode(title = title, description = title, targetChapter = (i + 1) * 2))
-            }
-        }
-        
-        return nodes
-    }
-    
-    /**
-     * 从生成内容中提取伏笔
-     */
-    private fun extractForeshadowings(content: String, chapterNum: Int): List<Foreshadowing> {
-        val foreshadowings = mutableListOf<Foreshadowing>()
-        // 简单的伏笔提取逻辑：查找括号内容或特定标记
-        val patterns = listOf(
-            Regex("""【(.+?)】"""),
-            Regex("""（(.+?)）"""),
-            Regex("""\[(.+?)\]""")
-        )
-        
-        for (pattern in patterns) {
-            pattern.findAll(content).forEach { match ->
-                val hint = match.groupValues[1]
-                if (hint.length in 4..30) {
-                    foreshadowings.add(Foreshadowing(
-                        content = hint,
-                        plantedChapter = chapterNum,
-                        hint = "待回收"
-                    ))
-                }
-            }
-        }
-        
-        return foreshadowings
-    }
-    
-    // ========== 伏笔管理 ==========
-    
-    fun resolveForeshadowing(foreshadowingId: String, chapterNum: Int) {
-        val novel = _currentNovel.value ?: return
-        
-        val index = novel.foreshadowings.indexOfFirst { it.id == foreshadowingId }
-        if (index >= 0) {
-            novel.foreshadowings[index] = novel.foreshadowings[index].copy(
-                isResolved = true,
-                resolvedChapter = chapterNum
-            )
-            viewModelScope.launch {
-                localStorage.saveNovel(novel)
-            }
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun getForeshadowingStats(): ForeshadowingStats {
-        return _currentNovel.value?.getForeshadowingStats() ?: ForeshadowingStats(0, 0, 0, 0f)
-    }
-    
-
+    // ========== 初始化 ==========
     init {
         loadApiConfig()
         loadNovels()
@@ -215,8 +75,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    // ========== API 配置 ==========
-    
+    // ========== API配置 ==========
     fun updateApiKey(apiKey: String) {
         viewModelScope.launch {
             val config = _uiState.value.apiConfig.copy(apiKey = apiKey)
@@ -231,27 +90,26 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    fun updateModel(model: String) {
+    fun toggleDarkMode() {
         viewModelScope.launch {
-            val config = _uiState.value.apiConfig.copy(model = model)
+            val config = _uiState.value.apiConfig.copy(
+                isDarkMode = !_uiState.value.apiConfig.isDarkMode
+            )
             localStorage.saveApiConfig(config)
         }
     }
     
-    fun toggleDarkMode() {
-        viewModelScope.launch {
-            val config = _uiState.value.apiConfig.copy(isDarkMode = !_uiState.value.apiConfig.isDarkMode)
-            localStorage.saveApiConfig(config)
-        }
+    // ========== 导航 ==========
+    fun navigateTo(screen: Screen) {
+        _uiState.value = _uiState.value.copy(currentScreen = screen)
     }
     
     // ========== 小说管理 ==========
-    
-    fun createNovel(title: String, type: String, style: String, mainCharacter: String) {
+    fun createNovel(title: String, genre: String, style: String, mainCharacter: String) {
         viewModelScope.launch {
             val novel = Novel(
                 title = title,
-                type = type,
+                genre = genre,
                 style = style,
                 mainCharacter = mainCharacter
             )
@@ -265,6 +123,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             val novel = localStorage.getNovel(novelId)
             _currentNovel.value = novel
+            _uiState.value = _uiState.value.copy(currentScreen = Screen.NovelDetail)
         }
     }
     
@@ -277,1287 +136,236 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    fun navigateTo(screen: Screen) {
-        _uiState.value = _uiState.value.copy(currentScreen = screen)
-    }
-    
-    fun clearError() {
-        _errorMessage.value = null
-    }
-    
-    // ========== 章节生成 ==========
-    
-    fun generateChapter(chapterTitle: String) {
-        val novel = _currentNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        if (config.apiKey.isBlank()) {
-            _errorMessage.value = "请先配置API密钥"
-            return
+    // ========== 小说详情更新 ==========
+    fun updateNovelOutline(novelId: String, outline: String) {
+        viewModelScope.launch {
+            val novel = localStorage.getNovel(novelId) ?: return@launch
+            val updated = novel.copy(outline = outline)
+            localStorage.saveNovel(updated)
+            _currentNovel.value = updated
         }
+    }
+    
+    fun updateWorldBuilding(novelId: String, worldBackground: String, powerSystem: String, rules: String) {
+        viewModelScope.launch {
+            val novel = localStorage.getNovel(novelId) ?: return@launch
+            val updated = novel.copy(
+                worldBuilding = WorldBuilding(
+                    worldBackground = worldBackground,
+                    powerSystem = powerSystem,
+                    rules = rules
+                )
+            )
+            localStorage.saveNovel(updated)
+            _currentNovel.value = updated
+        }
+    }
+    
+    fun addCharacter(novelId: String, name: String, description: String, role: String) {
+        viewModelScope.launch {
+            val novel = localStorage.getNovel(novelId) ?: return@launch
+            val newCharacter = Character(name = name, description = description, role = role)
+            novel.characters.add(newCharacter)
+            localStorage.saveNovel(novel)
+            _currentNovel.value = novel
+        }
+    }
+    
+    // ========== 自动模式核心流程 ==========
+    /**
+     * 开始全自动生成流程
+     * 简化版：输入想法 → 一键生成 → 阅读/续写
+     */
+    fun startAutoMode(userPrompt: String) {
+        if (_isGenerating.value) return
         
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
+        viewModelScope.launch {
+            _autoModeState.value = AutoModeState.GENERATING
             _isGenerating.value = true
             _streamingContent.value = ""
+            _errorMessage.value = null
             
-            val systemPrompt = buildChapterSystemPrompt(novel)
-            val userPrompt = buildChapterUserPrompt(novel, chapterTitle)
-            
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = systemPrompt,
-                userPrompt = userPrompt
-            ).collect { content ->
-                if (content.startsWith("[ERROR]")) {
-                    _errorMessage.value = content
-                } else {
-                    _streamingContent.update { it + content }
-                }
-            }
-            
-            _isGenerating.value = false
-            
-            val newContent = _streamingContent.value
-            if (newContent.isNotBlank()) {
-                val chapter = Chapter(
-                    title = chapterTitle,
-                    content = newContent,
-                    order = novel.chapters.size,
-                    wordCount = newContent.length
+            try {
+                // 如果还没有小说，创建一个
+                val novel = _currentNovel.value ?: createTempNovel(userPrompt)
+                val chapterNum = novel.chapters.size + 1
+                
+                // 构建Prompt
+                val (systemPrompt, userPromptText) = SimplePromptBuilder.buildChapterPrompt(
+                    novel = novel,
+                    chapterNum = chapterNum,
+                    userGuide = userPrompt,
+                    preset = _currentPreset.value
                 )
-                novel.chapters.add(chapter)
-                localStorage.saveNovel(novel)
-                _currentNovel.value = novel
+                
+                // 调用API
+                val apiConfig = _uiState.value.apiConfig
+                if (apiConfig.apiKey.isBlank()) {
+                    _errorMessage.value = "请先设置API Key"
+                    _autoModeState.value = AutoModeState.IDLE
+                    _isGenerating.value = false
+                    return@launch
+                }
+                
+                // 流式收集生成内容
+                val fullContent = StringBuilder()
+                apiService.generateContent(
+                    apiKey = apiConfig.apiKey,
+                    endpoint = apiConfig.endpoint,
+                    model = apiConfig.model,
+                    systemPrompt = systemPrompt,
+                    userPrompt = userPromptText,
+                    temperature = _currentPreset.value.temperature
+                ).collect { chunk ->
+                    if (chunk.startsWith("[ERROR]")) {
+                        _errorMessage.value = chunk
+                    } else {
+                        fullContent.append(chunk)
+                        _streamingContent.value = fullContent.toString()
+                    }
+                }
+                
+                // 保存章节
+                if (fullContent.isNotEmpty()) {
+                    saveChapter(novel, chapterNum, fullContent.toString())
+                }
+                
+                _autoModeState.value = AutoModeState.COMPLETED
+                
+            } catch (e: Exception) {
+                _errorMessage.value = "生成失败: ${e.message}"
+                _autoModeState.value = AutoModeState.IDLE
+            } finally {
+                _isGenerating.value = false
             }
         }
     }
     
-    fun continueChapter() {
-        val novel = _currentNovel.value ?: return
-        val lastChapter = novel.chapters.lastOrNull() ?: return
-        val config = _uiState.value.apiConfig
+    /**
+     * 从一句话创意创建临时小说
+     */
+    private suspend fun createTempNovel(idea: String): Novel {
+        val novel = Novel(
+            title = "新小说",
+            mainCharacter = idea
+        )
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+        return novel
+    }
+    
+    /**
+     * 保存生成的章节
+     */
+    private suspend fun saveChapter(novel: Novel, chapterNum: Int, content: String) {
+        // 尝试提取章节标题
+        val title = extractChapterTitle(content, chapterNum)
+        val cleanContent = cleanChapterContent(content, title)
         
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            _isGenerating.value = true
-            
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = "继续写小说《${novel.title}》，保持风格一致",
-                userPrompt = "请继续以下内容：\n\n${lastChapter.content.takeLast(1000)}"
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    _streamingContent.update { it + content }
-                }
-            }
-            
-            _isGenerating.value = false
-            
-            val newContent = _streamingContent.value
-            if (newContent.isNotBlank()) {
-                val chapterIndex = novel.chapters.indexOfLast { it.id == lastChapter.id }
-                if (chapterIndex >= 0) {
-                    novel.chapters[chapterIndex] = lastChapter.copy(content = newContent)
-                    localStorage.saveNovel(novel)
-                    _currentNovel.value = novel
+        val chapter = Chapter(
+            title = title,
+            content = cleanContent,
+            order = chapterNum,
+            summary = "" // 可以后续调用API生成摘要
+        )
+        
+        novel.chapters.add(chapter)
+        novel.updatedAt = System.currentTimeMillis()
+        localStorage.saveNovel(novel)
+        _currentNovel.value = novel
+    }
+    
+    /**
+     * 从内容中提取章节标题
+     */
+    private fun extractChapterTitle(content: String, defaultNum: Int): String {
+        // 尝试匹配常见标题格式
+        val patterns = listOf(
+            Regex("""第[一二三四五六七八九十百千万\\d]+章[：:](.+)"""),
+            Regex("""^第[一二三四五六七八九十百千万\\d]+章\s*(.+)""", RegexOption.MULTILINE),
+            Regex("""^第\\d+章\s*(.+)""", RegexOption.MULTILINE)
+        )
+        
+        for (pattern in patterns) {
+            val match = pattern.find(content)
+            if (match != null) {
+                val title = match.groupValues[1].trim()
+                if (title.isNotBlank() && title.length < 30) {
+                    return title
                 }
             }
         }
+        
+        return "第${defaultNum}章"
     }
     
+    /**
+     * 清理章节内容（去除标题重复等）
+     */
+    private fun cleanChapterContent(content: String, title: String): String {
+        var cleaned = content
+        
+        // 移除标题行的重复
+        if (title != "第${_currentNovel.value?.chapters?.size?.plus(1) ?: 1}章") {
+            val titlePattern = Regex("""第[一二三四五六七八九十百千万\\d]+章[：:].+""")
+            cleaned = cleaned.replaceFirst(titlePattern, "")
+        }
+        
+        return cleaned.trim()
+    }
+    
+    /**
+     * 继续生成下一章
+     */
+    fun continueAutoMode(nextGuide: String?) {
+        val novel = _currentNovel.value ?: return
+        startAutoMode(nextGuide ?: "")
+    }
+    
+    /**
+     * 停止生成
+     */
     fun stopGeneration() {
         generationJob?.cancel()
         _isGenerating.value = false
+        _autoModeState.value = AutoModeState.IDLE
     }
     
-    // ========== 角色管理 ==========
-    
-    fun addCharacter(name: String, description: String, role: String) {
-        addCharacterFull(name, description, role, "", "", "", "")
-    }
-    
-    fun addCharacterFull(
-        name: String, 
-        description: String, 
-        role: String,
-        appearance: String,
-        personality: String,
-        background: String,
-        abilities: String
-    ) {
-        val novel = _currentNovel.value ?: return
-        val character = Character(
-            name = name,
-            description = description,
-            role = role,
-            appearance = appearance,
-            personality = personality,
-            background = background,
-            abilities = abilities
-        )
-        novel.characters.add(character)
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun updateCharacter(
-        characterId: String,
-        name: String,
-        description: String,
-        role: String,
-        appearance: String,
-        personality: String,
-        background: String,
-        abilities: String
-    ) {
-        val novel = _currentNovel.value ?: return
-        val index = novel.characters.indexOfFirst { it.id == characterId }
-        if (index >= 0) {
-            novel.characters[index] = Character(
-                id = characterId,
-                name = name,
-                description = description,
-                role = role,
-                appearance = appearance,
-                personality = personality,
-                background = background,
-                abilities = abilities
-            )
-            viewModelScope.launch {
-                localStorage.saveNovel(novel)
-                _currentNovel.value = novel
-            }
-        }
-    }
-    
-    fun deleteCharacter(characterId: String) {
-        val novel = _currentNovel.value ?: return
-        novel.characters.removeAll { it.id == characterId }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun generateCharacters() {
-        val novel = _currentNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        if (config.apiKey.isBlank()) {
-            _errorMessage.value = "请先配置API密钥"
-            return
-        }
-        
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            _isGenerating.value = true
-            
-            val prompt = """
-                为小说《${novel.title}》设计角色。
-                
-                小说类型：${novel.type}
-                风格：${novel.style}
-                主角：${novel.mainCharacter}
-                
-                请生成3-5个角色，每个角色一行：
-                角色名|角色定位|角色描述
-            """.trimIndent()
-            
-            var result = ""
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = "你是专业的小说角色设计师",
-                userPrompt = prompt
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    result += content
-                }
-            }
-            
-            result.lines().filter { it.contains("|") }.forEach { line ->
-                val parts = line.split("|")
-                if (parts.size >= 3) {
-                    novel.characters.add(Character(
-                        name = parts[0].trim(),
-                        role = parts[1].trim(),
-                        description = parts[2].trim()
-                    ))
-                }
-            }
-            
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-            _isGenerating.value = false
-        }
-    }
-    
-    // ========== 世界观管理 ==========
-    
-    fun updateWorldBuilding(worldBackground: String, powerSystem: String, rules: String = "") {
-        val novel = _currentNovel.value ?: return
-        val updatedWorldBuilding = novel.worldBuilding.copy(
-            worldBackground = worldBackground,
-            powerSystem = powerSystem,
-            rules = rules
-        )
-        val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
-        viewModelScope.launch {
-            localStorage.saveNovel(updatedNovel)
-            _currentNovel.value = updatedNovel
-        }
-    }
-    
-    fun updateWorldBackground(background: String) {
-        val novel = _currentNovel.value ?: return
-        val updatedWorldBuilding = novel.worldBuilding.copy(worldBackground = background)
-        val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
-        viewModelScope.launch {
-            localStorage.saveNovel(updatedNovel)
-            _currentNovel.value = updatedNovel
-        }
-    }
-    
-    fun updatePowerSystem(system: String) {
-        val novel = _currentNovel.value ?: return
-        val updatedWorldBuilding = novel.worldBuilding.copy(powerSystem = system)
-        val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
-        viewModelScope.launch {
-            localStorage.saveNovel(updatedNovel)
-            _currentNovel.value = updatedNovel
-        }
-    }
-    
-    fun addLocation(name: String, description: String, type: String = "", significance: String = "") {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.geography.add(Location(
-            name = name,
-            description = description,
-            type = type,
-            significance = significance
-        ))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteLocation(locationId: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.geography.removeAll { it.id == locationId }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun addFaction(name: String, description: String, leader: String = "", goals: String = "") {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.factions.add(Faction(
-            name = name,
-            description = description,
-            leader = leader,
-            goals = goals
-        ))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteFaction(factionId: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.factions.removeAll { it.id == factionId }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun addItem(name: String, description: String, type: String = "", abilities: String = "") {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.items.add(GameItem(
-            name = name,
-            description = description,
-            type = type,
-            abilities = abilities
-        ))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteItem(itemId: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.items.removeAll { it.id == itemId }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun addSkill(name: String, description: String, type: String = "", requirements: String = "") {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.skills.add(Skill(
-            name = name,
-            description = description,
-            type = type,
-            requirements = requirements
-        ))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteSkill(skillId: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.skills.removeAll { it.id == skillId }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun addTimelineEvent(title: String, description: String, time: String = "") {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.timeline.add(TimelineEvent(
-            title = title,
-            description = description,
-            time = time
-        ))
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    fun deleteTimelineEvent(eventId: String) {
-        val novel = _currentNovel.value ?: return
-        novel.worldBuilding.timeline.removeAll { it.id == eventId }
-        viewModelScope.launch {
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-        }
-    }
-    
-    // ========== AI生成功能 ==========
-    
-    fun generateWorldBuilding() {
-        val novel = _currentNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        if (config.apiKey.isBlank()) {
-            _errorMessage.value = "请先配置API密钥"
-            return
-        }
-        
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            _isGenerating.value = true
-            
-            val prompt = """
-                为小说《${novel.title}》设计一个完整的世界观背景。
-                
-                小说类型：${novel.type}
-                风格：${novel.style}
-                主角：${novel.mainCharacter}
-                
-                请详细描述：
-                1. 世界的基本设定和历史
-                2. 世界的地理环境
-                3. 社会结构和文化
-                4. 重要势力和种族
-                5. 核心设定
-                
-                请用中文回答，详细且有创意。
-            """.trimIndent()
-            
-            var result = ""
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = "你是专业的小说世界观设计师",
-                userPrompt = prompt
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    result += content
-                }
-            }
-            
-            if (result.isNotBlank()) {
-                val updatedWorldBuilding = novel.worldBuilding.copy(worldBackground = result)
-                val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
-                localStorage.saveNovel(updatedNovel)
-                _currentNovel.value = updatedNovel
-            }
-            _isGenerating.value = false
-        }
-    }
-    
-    fun generateWorldBackground() {
-        generateWorldBuilding()
-    }
-    
-    fun generatePowerSystem() {
-        val novel = _currentNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        if (config.apiKey.isBlank()) {
-            _errorMessage.value = "请先配置API密钥"
-            return
-        }
-        
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            _isGenerating.value = true
-            
-            val prompt = """
-                为小说《${novel.title}》设计核心设定（如修炼体系/感情线框架/社会阶层等）。
-                
-                世界背景：${novel.worldBuilding.worldBackground}
-                
-                请设计：
-                1. 力量来源和修炼方式
-                2. 等级划分和名称
-                3. 各类能力的特点和限制
-                4. 突破条件的设定
-                
-                请用中文回答，有创意且逻辑自洽。
-            """.trimIndent()
-            
-            var result = ""
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = "你是专业的小说设定设计师",
-                userPrompt = prompt
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    result += content
-                }
-            }
-            
-            if (result.isNotBlank()) {
-                val updatedWorldBuilding = novel.worldBuilding.copy(powerSystem = result)
-                val updatedNovel = novel.copy(worldBuilding = updatedWorldBuilding)
-                localStorage.saveNovel(updatedNovel)
-                _currentNovel.value = updatedNovel
-            }
-            _isGenerating.value = false
-        }
-    }
-    
-    fun generateLocations() {
-        val novel = _currentNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        if (config.apiKey.isBlank()) {
-            _errorMessage.value = "请先配置API密钥"
-            return
-        }
-        
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            _isGenerating.value = true
-            
-            val prompt = """
-                为小说《${novel.title}》生成地点/场景。
-                
-                世界背景：${novel.worldBuilding.worldBackground}
-                核心设定：${novel.worldBuilding.powerSystem}
-                
-                请生成3-5个地点，每个一行：
-                地点名|地点类型|地点描述|重要程度
-            """.trimIndent()
-            
-            var result = ""
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = "你是专业的小说场景设计师",
-                userPrompt = prompt
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    result += content
-                }
-            }
-            
-            result.lines().filter { it.contains("|") }.forEach { line ->
-                val parts = line.split("|")
-                if (parts.size >= 3) {
-                    novel.worldBuilding.geography.add(Location(
-                        name = parts[0].trim(),
-                        type = parts.getOrNull(1)?.trim() ?: "",
-                        description = parts.getOrNull(2)?.trim() ?: "",
-                        significance = parts.getOrNull(3)?.trim() ?: ""
-                    ))
-                }
-            }
-            
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-            _isGenerating.value = false
-        }
-    }
-    
-    fun generateFactions() {
-        val novel = _currentNovel.value ?: return
-        generateSimpleItems("势力/门派") { name, desc ->
-            novel.worldBuilding.factions.add(Faction(name = name, description = desc))
-        }
-    }
-    
-    fun generateItems() {
-        val novel = _currentNovel.value ?: return
-        generateSimpleItems("物品/装备") { name, desc ->
-            novel.worldBuilding.items.add(GameItem(name = name, description = desc))
-        }
-    }
-    
-    fun generateSkills() {
-        val novel = _currentNovel.value ?: return
-        generateSimpleItems("技能/功法") { name, desc ->
-            novel.worldBuilding.skills.add(Skill(name = name, description = desc))
-        }
-    }
-    
-    fun generateTimeline() {
-        val novel = _currentNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            _isGenerating.value = true
-            
-            val prompt = """
-                根据小说《${novel.title}》的大纲，生成故事时间线。
-                
-                大纲：${novel.outline}
-                
-                请生成5-10个关键事件，每个事件一行：
-                时间|事件标题|事件描述
-            """.trimIndent()
-            
-            var result = ""
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = "你是一个专业的小说剧情设计师",
-                userPrompt = prompt
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    result += content
-                }
-            }
-            
-            result.lines().filter { it.contains("|") }.forEach { line ->
-                val parts = line.split("|")
-                if (parts.size >= 2) {
-                    novel.worldBuilding.timeline.add(TimelineEvent(
-                        time = parts.getOrNull(0)?.trim() ?: "",
-                        title = parts.getOrNull(1)?.trim() ?: "",
-                        description = parts.getOrNull(2)?.trim() ?: ""
-                    ))
-                }
-            }
-            
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-            _isGenerating.value = false
-        }
-    }
-    
-    private fun generateSimpleItems(typeName: String, adder: Novel.(String, String) -> Unit) {
-        val novel = _currentNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            _isGenerating.value = true
-            
-            val prompt = """
-                为小说《${novel.title}》生成${typeName}。
-                
-                世界背景：${novel.worldBuilding.worldBackground}
-                核心设定：${novel.worldBuilding.powerSystem}
-                
-                请生成3-5个${typeName}，每个一行：
-                名称|描述
-            """.trimIndent()
-            
-            var result = ""
-            apiService.generateContent(
-                apiKey = config.apiKey,
-                endpoint = config.endpoint,
-                model = config.model,
-                systemPrompt = "你是专业的小说设定设计师",
-                userPrompt = prompt
-            ).collect { content ->
-                if (!content.startsWith("[ERROR]")) {
-                    result += content
-                }
-            }
-            
-            result.lines().filter { it.contains("|") }.forEach { line ->
-                val parts = line.split("|")
-                if (parts.size >= 2) {
-                    novel.adder(parts[0].trim(), parts.getOrNull(1)?.trim() ?: "")
-                }
-            }
-            
-            localStorage.saveNovel(novel)
-            _currentNovel.value = novel
-            _isGenerating.value = false
-        }
-    }
-    
-    // ========== 全自动模式 ==========
-    
-    // ========== 全自动模式 ==========
-    
-    fun startAutoMode(userPrompt: String) {
-        val config = _uiState.value.apiConfig
-        
-        if (config.apiKey.isBlank()) {
-            _errorMessage.value = "请先配置API密钥"
-            return
-        }
-        
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            try {
-                _autoModeState.value = AutoModeState.GENERATING_OUTLINE
-                _streamingContent.value = ""
-                
-                // 生成小说基础资料
-                var outlineResult = ""
-                var outlineError: String? = null
-                
-                apiService.generateContent(
-                    apiKey = config.apiKey,
-                    endpoint = config.endpoint,
-                    model = config.model,
-                    systemPrompt = "你是一个全能型小说创作顾问，精通各类型小说创作。请根据用户意图智能判断类型，生成精简实用的基础设定。严格按JSON格式输出，不要添加任何多余内容。",
-                    userPrompt = """
-                        用户想写：$userPrompt
-                        
-                        请分析用户意图，判断小说类型，生成精简基础设定。
-                        
-                        【核心原则】
-                        - 类型由内容决定，不要默认偏向玄幻/战斗
-                        - 角色只用"主角/配角/关键人物"，不要预设"反派"
-                        - 核心设定：玄幻填修炼体系，言情填感情线框架，都市填社会规则，日常可留空
-                        - 世界背景根据类型自适应
-
-                        生成内容：
-                        1. 标题（有创意且吸引人）
-                        2. 类型（都市言情/悬疑推理/日常治愈/玄幻修仙/科幻未来/历史架空/职场商战/校园青春等）
-                        3. 风格（温馨细腻/紧张烧脑/轻松幽默/热血激昂/深沉厚重等）
-                        4. 主角设定（姓名、性格、核心特征）
-                        5. 大纲（300字左右，包含开头、发展、高潮、结局）
-                        6. 世界背景（根据类型调整，100字左右）
-                        7. 关键人物（3-5个，包含姓名、身份、与主角关系、性格关键词）
-                        8. 关键节点（6-8个，格式：节点标题|节点描述）
-                        
-                        严格按JSON格式输出：
-                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"大纲\n关键节点：\n1. 开篇\n2. ...","worldBackground":"世界背景","keyCharacters":"关键人物描述（每人一行：姓名-身份-与主角关系-性格）","powerSystem":"核心设定内容或留空"}
-                    """.trimIndent()
-                ).collect { content ->
-                    if (content.startsWith("[ERROR]")) {
-                        outlineError = content
-                    } else {
-                        outlineResult += content
-                        _streamingContent.update { it + content }
-                    }
-                }
-                
-                // 检查大纲生成是否成功
-                if (!outlineError.isNullOrEmpty()) {
-                    _errorMessage.value = "资料生成失败: $outlineError"
-                    _autoModeState.value = AutoModeState.IDLE
-                    return@launch
-                }
-                
-                if (outlineResult.isBlank()) {
-                    _errorMessage.value = "资料生成失败，请检查网络连接"
-                    _autoModeState.value = AutoModeState.IDLE
-                    return@launch
-                }
-                
-                // 解析并创建待审阅的小说
-                val outlineText = extractField(outlineResult, "outline") ?: outlineResult
-                val keyNodes = parseKeyNodesFromOutline(outlineText)
-                val keyCharactersText = extractField(outlineResult, "keyCharacters") ?: ""
-                
-                // 简化角色解析：从keyCharacters文本生成角色列表
-                val characters = mutableListOf<Character>()
-                if (keyCharactersText.isNotBlank()) {
-                    keyCharactersText.split("\n").forEach { line ->
-                        val parts = line.split("-")
-                        if (parts.isNotEmpty() && parts[0].isNotBlank()) {
-                            characters.add(Character(
-                                name = parts[0].trim(),
-                                description = if (parts.size > 1) parts.drop(1).joinToString("-").trim() else "",
-                                role = if (parts.size > 2) parts[2].trim() else "配角",
-                                personality = if (parts.size > 3) parts[3].trim() else ""
-                            ))
-                        }
-                    }
-                }
-                
-                val novel = Novel(
-                    title = extractField(outlineResult, "title") ?: "未命名小说",
-                    type = extractField(outlineResult, "type") ?: "",
-                    style = extractField(outlineResult, "style") ?: "",
-                    mainCharacter = extractField(outlineResult, "mainCharacter") ?: "",
-                    outline = outlineText,
-                    characters = characters,
-                    worldBuilding = WorldBuilding(
-                        worldBackground = extractField(outlineResult, "worldBackground") ?: "",
-                        powerSystem = extractField(outlineResult, "powerSystem") ?: ""
-                    ),
-                    keyNodes = keyNodes.toMutableList()
-                )
-                
-                // 初始化Agent系统
-                agentOrchestrator.initializeFromOutline(novel)
-                novel.characters.forEach { char ->
-                    characterMindSystem.initializeCharacter(char, novel.type)
-                }
-                
-                // 保存到待审阅状态，进入审阅阶段
-                _autoModeNovel.value = novel
-                _autoModeState.value = AutoModeState.REVIEW
-                
-            } catch (e: Exception) {
-                _isGenerating.value = false
-                _errorMessage.value = "生成失败: ${e.message}"
-                _autoModeState.value = AutoModeState.IDLE
-            }
-        }
-    }
-    
-    // 更新待审阅的小说资料
-    fun updateAutoModeNovel(
-        title: String? = null,
-        type: String? = null,
-        style: String? = null,
-        mainCharacter: String? = null,
-        outline: String? = null,
-        worldBackground: String? = null,
-        powerSystem: String? = null,
-        worldRules: String? = null
-    ) {
-        val novel = _autoModeNovel.value ?: return
-        _autoModeNovel.value = novel.copy(
-            title = title ?: novel.title,
-            type = type ?: novel.type,
-            style = style ?: novel.style,
-            mainCharacter = mainCharacter ?: novel.mainCharacter,
-            outline = outline ?: novel.outline,
-            worldBuilding = novel.worldBuilding.copy(
-                worldBackground = worldBackground ?: novel.worldBuilding.worldBackground,
-                powerSystem = powerSystem ?: novel.worldBuilding.powerSystem,
-                rules = worldRules ?: novel.worldBuilding.rules
-            )
-        )
-    }
-    
-    // 更新关键人物（从文本解析为Character列表）
-    fun updateAutoModeKeyCharacters(text: String) {
-        val novel = _autoModeNovel.value ?: return
-        val characters = mutableListOf<Character>()
-        text.split("\n").forEach { line ->
-            val trimmed = line.trim()
-            if (trimmed.isNotBlank()) {
-                val parts = trimmed.split(" - ").map { it.trim() }
-                if (parts.isNotEmpty() && parts[0].isNotBlank()) {
-                    characters.add(Character(
-                        name = parts[0],
-                        role = parts.getOrElse(1) { "配角" },
-                        description = parts.getOrElse(2) { "" },
-                        personality = parts.getOrElse(3) { "" }
-                    ))
-                }
-            }
-        }
-        _autoModeNovel.value = novel.copy(characters = characters)
-    }
-    
-    // 确认资料并开始写作
-    fun confirmAndStartWriting() {
-        val novel = _autoModeNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        if (config.apiKey.isBlank()) {
-            _errorMessage.value = "请先配置API密钥"
-            return
-        }
-        
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            try {
-                // 保存小说
-                localStorage.saveNovel(novel)
-                _currentNovel.value = novel
-                
-                // 开始生成第一章
-                _autoModeState.value = AutoModeState.GENERATING_CHAPTER
-                _isGenerating.value = true
-                _streamingContent.value = ""
-                
-                var chapterError: String? = null
-                
-                val chapterPrompt = buildAutoChapterPrompt(novel, 1, "")
-                
-                // P0：计算动态temperature
-                val temperature = calculateTemperature(1, novel.keyNodes.size)
-                
-                apiService.generateContent(
-                    apiKey = config.apiKey,
-                    endpoint = config.endpoint,
-                    model = config.model,
-                    systemPrompt = buildAutoChapterSystemPrompt(novel, 1),
-                    userPrompt = chapterPrompt,
-                    temperature = temperature
-                ).collect { content ->
-                    if (content.startsWith("[ERROR]")) {
-                        chapterError = content
-                    } else {
-                        _streamingContent.update { it + content }
-                    }
-                }
-                
-                _isGenerating.value = false
-                
-                if (!chapterError.isNullOrEmpty()) {
-                    _errorMessage.value = "章节生成失败: $chapterError"
-                    return@launch
-                }
-                
-                val chapterContent = _streamingContent.value
-                if (chapterContent.isNotBlank()) {
-                    val chapter = Chapter(
-                        title = "第一章",
-                        content = chapterContent,
-                        order = 0,
-                        wordCount = chapterContent.length
-                    )
-                    novel.chapters.add(chapter)
-                    localStorage.saveNovel(novel)
-                    _currentNovel.value = novel
-                } else {
-                    _errorMessage.value = "章节内容为空，请重试"
-                }
-            } catch (e: Exception) {
-                _isGenerating.value = false
-                _errorMessage.value = "生成失败: ${e.message}"
-            }
-        }
-    }
-    
-    fun continueAutoMode(guide: String) {
-        val novel = _currentNovel.value ?: return
-        val config = _uiState.value.apiConfig
-        
-        generationJob?.cancel()
-        generationJob = viewModelScope.launch {
-            try {
-                _autoModeState.value = AutoModeState.GENERATING_CHAPTER
-                _isGenerating.value = true
-                _streamingContent.value = ""
-                
-                val chapterNum = novel.chapters.size + 1
-                val lastChapter = novel.chapters.lastOrNull()
-                
-                val prompt = """
-                    请创作第${chapterNum}章。
-                    
-                    ${if (guide.isNotBlank()) "用户引导：$guide" else ""}
-                    
-                    ${if (lastChapter != null) "上一章结尾：\n${lastChapter.content.takeLast(500)}" else ""}
-                    
-                    请继续推进故事，保持风格一致。
-                """.trimIndent()
-                
-                var chapterError: String? = null
-                
-                // P0：计算动态temperature
-                val temperature = calculateTemperature(chapterNum, novel.keyNodes.size)
-                
-                apiService.generateContent(
-                    apiKey = config.apiKey,
-                    endpoint = config.endpoint,
-                    model = config.model,
-                    systemPrompt = buildAutoChapterSystemPrompt(novel, chapterNum),
-                    userPrompt = prompt,
-                    temperature = temperature
-                ).collect { content ->
-                    if (content.startsWith("[ERROR]")) {
-                        chapterError = content
-                    } else {
-                        _streamingContent.update { it + content }
-                    }
-                }
-                
-                _isGenerating.value = false
-                
-                if (!chapterError.isNullOrEmpty()) {
-                    _errorMessage.value = "章节生成失败: $chapterError"
-                    return@launch
-                }
-                
-                val chapterContent = _streamingContent.value
-                if (chapterContent.isNotBlank()) {
-                    val chapter = Chapter(
-                        title = "第${chapterNum}章",
-                        content = chapterContent,
-                        order = novel.chapters.size,
-                        wordCount = chapterContent.length
-                    )
-                    novel.chapters.add(chapter)
-                    localStorage.saveNovel(novel)
-                    _currentNovel.value = novel
-                } else {
-                    _errorMessage.value = "章节内容为空，请重试"
-                }
-            } catch (e: Exception) {
-                _isGenerating.value = false
-                _errorMessage.value = "生成失败: ${e.message}"
-            }
-        }
-    }
-    
-    fun finishAutoMode() {
-        _autoModeState.value = AutoModeState.COMPLETED
-    }
-    
+    /**
+     * 重置自动模式
+     */
     fun resetAutoMode() {
         _autoModeState.value = AutoModeState.IDLE
-        _autoModeNovel.value = null
         _streamingContent.value = ""
+        _errorMessage.value = null
     }
     
-    // Bug1修复：从书架继续写作
-    fun continueNovel(novelId: String) {
-        viewModelScope.launch {
-            val novel = localStorage.getNovel(novelId) ?: return@launch
-            _currentNovel.value = novel
-            _autoModeNovel.value = novel
-            _autoModeState.value = AutoModeState.REVIEW
-            _uiState.value = _uiState.value.copy(currentScreen = Screen.AutoMode)
-        }
+    /**
+     * 完成自动模式
+     */
+    fun finishAutoMode() {
+        _autoModeState.value = AutoModeState.COMPLETED
+        navigateTo(Screen.Reading)
     }
     
-    fun retryAutoMode() {
-        // 保持当前小说数据，重置到审阅状态
-        _autoModeState.value = AutoModeState.REVIEW
-        _isGenerating.value = false
-        _streamingContent.value = ""
-    }
-    
-    // ========== 数组解析方法 ==========
-    
-    private fun parseCharacterArray(text: String): List<Character> {
-        val characters = mutableListOf<Character>()
-        try {
-            val arrayPattern = """"characters"\s*:\s*\[""".toRegex()
-            val arrayMatch = arrayPattern.find(text) ?: return characters
-            val arrayStart = arrayMatch.range.first
-            var depth = 0
-            var arrayEnd = arrayStart
-            for (i in arrayStart until text.length) {
-                if (text[i] == '[') depth++
-                else if (text[i] == ']') {
-                    depth--
-                    if (depth == 0) { arrayEnd = i + 1; break }
-                }
-            }
-            val arrayText = text.substring(arrayStart, arrayEnd)
-            val objPattern = """\{[^{}]*"name"\s*:\s*"([^"]+)"[^{}]*\}""".toRegex(RegexOption.DOT_MATCHES_ALL)
-            objPattern.findAll(arrayText).forEach { match ->
-                val objText = match.value
-                characters.add(Character(
-                    name = extractField(objText, "name") ?: "未命名",
-                    description = extractField(objText, "description") ?: "",
-                    role = extractField(objText, "role") ?: "配角",
-                    appearance = extractField(objText, "appearance") ?: "",
-                    personality = extractField(objText, "personality") ?: "",
-                    background = extractField(objText, "background") ?: "",
-                    abilities = extractField(objText, "abilities") ?: "",
-                    relationships = extractField(objText, "relationships") ?: ""
-                ))
-            }
-        } catch (e: Exception) { }
-        return characters
-    }
-    
-    private fun parseLocationArray(text: String): List<Location> {
-        val locations = mutableListOf<Location>()
-        try {
-            val arrayPattern = """"locations"\s*:\s*\[""".toRegex()
-            val arrayMatch = arrayPattern.find(text) ?: return locations
-            val arrayStart = arrayMatch.range.first
-            var depth = 0
-            var arrayEnd = arrayStart
-            for (i in arrayStart until text.length) {
-                if (text[i] == '[') depth++
-                else if (text[i] == ']') {
-                    depth--
-                    if (depth == 0) { arrayEnd = i + 1; break }
-                }
-            }
-            val arrayText = text.substring(arrayStart, arrayEnd)
-            val objPattern = """\{[^{}]*"name"\s*:\s*"([^"]+)"[^{}]*\}""".toRegex(RegexOption.DOT_MATCHES_ALL)
-            objPattern.findAll(arrayText).forEach { match ->
-                val objText = match.value
-                locations.add(Location(
-                    name = extractField(objText, "name") ?: "未命名",
-                    description = extractField(objText, "description") ?: "",
-                    type = extractField(objText, "type") ?: "",
-                    significance = extractField(objText, "significance") ?: ""
-                ))
-            }
-        } catch (e: Exception) { }
-        return locations
-    }
-    
-    private fun parseFactionArray(text: String): List<Faction> {
-        val factions = mutableListOf<Faction>()
-        try {
-            val arrayPattern = """"factions"\s*:\s*\[""".toRegex()
-            val arrayMatch = arrayPattern.find(text) ?: return factions
-            val arrayStart = arrayMatch.range.first
-            var depth = 0
-            var arrayEnd = arrayStart
-            for (i in arrayStart until text.length) {
-                if (text[i] == '[') depth++
-                else if (text[i] == ']') {
-                    depth--
-                    if (depth == 0) { arrayEnd = i + 1; break }
-                }
-            }
-            val arrayText = text.substring(arrayStart, arrayEnd)
-            val objPattern = """\{[^{}]*"name"\s*:\s*"([^"]+)"[^{}]*\}""".toRegex(RegexOption.DOT_MATCHES_ALL)
-            objPattern.findAll(arrayText).forEach { match ->
-                val objText = match.value
-                factions.add(Faction(
-                    name = extractField(objText, "name") ?: "未命名",
-                    description = extractField(objText, "description") ?: "",
-                    leader = extractField(objText, "leader") ?: "",
-                    goals = extractField(objText, "goals") ?: "",
-                    relationships = extractField(objText, "relationships") ?: ""
-                ))
-            }
-        } catch (e: Exception) { }
-        return factions
-    }
-    
-    // ========== 辅助方法 ==========
-    
-    private fun extractField(text: String, field: String): String? {
-        // 支持多行文本：先尝试匹配引号内的内容（含转义换行符）
-        val singleLinePattern = """"$field"\s*:\s*"((?:[^"\\]|\\.)*)"""".toRegex()
-        val result = singleLinePattern.find(text)?.groupValues?.getOrNull(1)
-        // 将JSON转义的换行符替换为真实换行
-        return result?.replace("\\n", "\n")?.replace("\\t", "\t")
-    }
-    
-    private fun buildChapterSystemPrompt(novel: Novel): String {
-        return """
-            你是一位专业的中文小说作家。
-            
-            小说信息：
-            - 标题：《${novel.title}》
-            - 类型：${novel.type}
-            - 风格：${novel.style}
-            - 主角：${novel.mainCharacter}
-            
-            世界观：
-            ${novel.worldBuilding.worldBackground}
-            
-            核心设定：
-            ${novel.worldBuilding.powerSystem}
-            
-            写作要求：
-            1. 使用中文
-            2. 描写生动，情节紧凑
-            3. 每章3000-5000字
-        """.trimIndent()
-    }
-    
-    private fun buildChapterUserPrompt(novel: Novel, chapterTitle: String): String {
-        val previousContent = novel.chapters.lastOrNull()?.content ?: ""
-        val characters = novel.characters.take(5).joinToString("\n") { 
-            "- ${it.name}（${it.role}）：${it.description}" 
-        }
-        
-        return """
-            请创作章节：$chapterTitle
-            
-            ${if (characters.isNotBlank()) "主要角色：\n$characters" else ""}
-            
-            ${if (previousContent.isNotBlank()) "上一章结尾：\n${previousContent.takeLast(500)}" else ""}
-            
-            请继续创作，保持风格一致。
-        """.trimIndent()
-    }
-    
-    private fun buildAutoChapterSystemPrompt(novel: Novel, chapterNum: Int = 1): String {
-        // P0：计算进度信息
-        val progressInfo = novel.getProgressInfo(chapterNum)
-        val unresolvedForeshadowings = novel.getUnresolvedForeshadowings()
-        val isConvergence = novel.isConvergenceMode()
-        val temperature = calculateTemperature(chapterNum, novel.keyNodes.size)
-        
-        // P0：进度提示
-        val progressHint = if (novel.keyNodes.isNotEmpty()) {
-            """
-【当前进度】
-${progressInfo.toModelHint()}
-阶段：${if (chapterNum.toFloat() / novel.keyNodes.size < 0.2f) "开场阶段（高创意）"
-                  else if (chapterNum.toFloat() / novel.keyNodes.size < 0.8f) "推进阶段（稳健发展）"
-                  else "收束阶段（即将结局）"}
-Temperature: $temperature
-"""
-        } else ""
-        
-        // P0：伏笔提示
-        val foreshadowingHint = if (unresolvedForeshadowings.isNotEmpty()) {
-            """
-【未回收伏笔（需择机回收）】
-${unresolvedForeshadowings.take(5).mapIndexed { i, f -> "${i + 1}. ${f.content}（第${f.plantedChapter}章埋下）" }.joinToString("\n")}
-${if (isConvergence) "\n⚠️ 收束模式：必须在本章回收至少一条伏笔！" else ""}
-"""
-        } else ""
-        
-        return """
-你是一位资深的中文网络小说作家，正在创作《${novel.title}》。
-
-小说类型：${novel.type}
-写作风格：${novel.style}
-
-世界背景：
-${novel.worldBuilding.worldBackground}
-
-核心设定：
-${novel.worldBuilding.powerSystem}
-
-大纲：
-${novel.outline}
-
-$progressHint
-$foreshadowingHint
-
-${getAntiAIWritingHints()}
-
-【章节要求】
-1. 纯中文写作
-2. 文笔流畅，引人入胜
-3. 每章3000-5000字
-4. 结尾留悬念
-${if (isConvergence) "5. 【重要】本章必须推进主线结局，回收至少一条伏笔" else ""}
-        """.trimIndent()
-    }
-    
-    private fun buildAutoChapterPrompt(novel: Novel, chapterNum: Int, guide: String): String {
-        return """
-            请创作第${chapterNum}章。
-            
-            ${if (guide.isNotBlank()) "引导：$guide" else "这是开篇，请精彩地引入故事。"}
-            
-            主角设定：${novel.mainCharacter}
-            
-            请创作这一章，字数3000-5000字。
-        """.trimIndent()
-    }
-
-    // ========== 生成模式控制 ==========
-    
-    fun setGenerationMode(mode: String) {
-        _generationMode.value = mode
-    }
-    
+    // ========== 模式选择 ==========
     fun setGenerationPreset(presetId: String) {
-        _currentPresetId.value = presetId
-        val novel = _autoModeNovel.value ?: return
-        val updated = GenerationPresets.applyPreset(novel, presetId)
-        _autoModeNovel.value = updated
+        _currentPreset.value = GenerationPresets.getById(presetId)
     }
     
-    // 用户实时指令注入
-    private var _userCommand: String? = null
-    fun injectUserCommand(command: String) {
-        _userCommand = command
-    }
-    
-    fun consumeUserCommand(): String? {
-        val cmd = _userCommand
-        _userCommand = null
-        return cmd
-    }
-    
-    // ========== P1-P4 新增方法 ==========
-    
-    // P1: 更新感官配置
-    fun updateSensoryProfile(novel: Novel, profile: SensoryProfile): Novel {
-        val updated = novel.copy(sensoryProfile = profile)
-        viewModelScope.launch {
-            localStorage.saveNovel(updated)
-            _currentNovel.value = updated
-        }
-        return updated
-    }
-    
-    // P1: 更新生成配置
-    fun updateGenerationConfig(novel: Novel, config: GenerationConfig): Novel {
-        val updated = novel.copy(generationConfig = config)
-        viewModelScope.launch {
-            localStorage.saveNovel(updated)
-            _currentNovel.value = updated
-        }
-        return updated
-    }
-    
-    // P4: 全自动模式设置更新
-    fun updateAutoModeTabooLevel(level: TabooLevel) {
-        val novel = _autoModeNovel.value ?: return
-        val newProfile = novel.sensoryProfile.copy(tabooLevel = level)
-        _autoModeNovel.value = novel.copy(sensoryProfile = newProfile)
-    }
-    
-    fun updateAutoModeDescriptionDensity(density: Int) {
-        val novel = _autoModeNovel.value ?: return
-        val newProfile = novel.sensoryProfile.copy(descriptionDensity = density)
-        _autoModeNovel.value = novel.copy(sensoryProfile = newProfile)
-    }
-    
-    fun updateAutoModeRhythmPreference(preference: RhythmPreference) {
-        val novel = _autoModeNovel.value ?: return
-        val newConfig = novel.generationConfig.copy(rhythmPreference = preference)
-        _autoModeNovel.value = novel.copy(generationConfig = newConfig)
+    // ========== 错误处理 ==========
+    fun clearError() {
+        _errorMessage.value = null
     }
 }
 
+// ========== UI状态 ==========
 data class XSGrokUiState(
     val apiConfig: ApiConfig = ApiConfig(),
     val currentScreen: Screen = Screen.Home
 )
 
+// ========== 屏幕枚举 ==========
 enum class Screen {
     Home,
     Settings,

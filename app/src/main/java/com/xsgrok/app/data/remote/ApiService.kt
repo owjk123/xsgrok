@@ -36,7 +36,7 @@ class ApiService {
             connection.setRequestProperty("Authorization", "Bearer $apiKey")
             connection.doOutput = true
             connection.connectTimeout = 60 * 1000
-            connection.readTimeout = 120 * 1000
+            connection.readTimeout = 180 * 1000  // 增加超时时间
             
             val requestBody = ChatRequest(
                 model = model,
@@ -107,17 +107,22 @@ class ApiService {
     )
 }
 
-class ApiEndpoints {
-    companion object {
-        val PRIMARY = "https://api.apiyi.com/v1"
-        val BACKUP1 = "http://vip.apiyi.com:16888"
-        val BACKUP2 = "http://api-cf.apiyi.com:16888"
-        
-        val MODELS = listOf(
-            "grok-4.20-beta",
-            "grok-4.20-beta-0309-reasoning",
-            "grok-4.20-beta-0309-non-reasoning",
-            "grok-4.20-multi-agent-beta-0309"
-        )
-    }
+/**
+ * API端点配置
+ */
+object ApiEndpoints {
+    // 主要端点
+    const val PRIMARY = "https://api.edgefn.net/v1"
+    // 备用端点
+    const val BACKUP1 = "https://api.openai.com/v1"
+    const val BACKUP2 = "https://api.anthropic.com/v1"
+    
+    // 可用模型列表
+    val MODELS = listOf(
+        "GLM-5.1",
+        "gpt-4o",
+        "gpt-4o-mini",
+        "claude-3-opus",
+        "claude-3-sonnet"
+    )
 }
