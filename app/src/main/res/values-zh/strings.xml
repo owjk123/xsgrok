@@ -52,8 +52,6 @@
     <string name="description">描述</string>
     <string name="appearance">外貌</string>
     <string name="personality">性格</string>
-    <string name="background">背景</string>
-    <string name="abilities">能力</string>
     <string name="no_characters">暂无角色</string>
     <string name="delete_character">删除角色</string>
     <string name="delete_character_confirm">确定要删除角色"%1$s"吗？</string>

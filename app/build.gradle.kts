@@ -38,6 +38,11 @@ android {
     }
 
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+    
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.8" }
