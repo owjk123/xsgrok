@@ -295,6 +295,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             _streamingContent.value = ""
@@ -312,7 +313,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 if (content.startsWith("[ERROR]")) {
                     _errorMessage.value = content
                 } else {
-                    _streamingContent.value += content
+                    _streamingContent.update { it + content }
                 }
             }
             
@@ -338,6 +339,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         val lastChapter = novel.chapters.lastOrNull() ?: return
         val config = _uiState.value.apiConfig
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             
@@ -349,7 +351,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 userPrompt = "请继续以下内容：\n\n${lastChapter.content.takeLast(1000)}"
             ).collect { content ->
                 if (!content.startsWith("[ERROR]")) {
-                    _streamingContent.value += content
+                    _streamingContent.update { it + content }
                 }
             }
             
@@ -452,6 +454,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             
@@ -657,6 +660,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             
@@ -713,6 +717,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             
@@ -762,6 +767,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             
@@ -831,6 +837,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             
@@ -877,6 +884,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             _isGenerating.value = true
             
@@ -928,6 +936,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             try {
                 _autoModeState.value = AutoModeState.GENERATING_OUTLINE
@@ -971,7 +980,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                         outlineError = content
                     } else {
                         outlineResult += content
-                        _streamingContent.value += content
+                        _streamingContent.update { it + content }
                     }
                 }
                 
@@ -1098,6 +1107,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             return
         }
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             try {
                 // 保存小说
@@ -1127,7 +1137,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     if (content.startsWith("[ERROR]")) {
                         chapterError = content
                     } else {
-                        _streamingContent.value += content
+                        _streamingContent.update { it + content }
                     }
                 }
                 
@@ -1163,6 +1173,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         val novel = _currentNovel.value ?: return
         val config = _uiState.value.apiConfig
         
+        generationJob?.cancel()
         generationJob = viewModelScope.launch {
             try {
                 _autoModeState.value = AutoModeState.GENERATING_CHAPTER
@@ -1198,7 +1209,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     if (content.startsWith("[ERROR]")) {
                         chapterError = content
                     } else {
-                        _streamingContent.value += content
+                        _streamingContent.update { it + content }
                     }
                 }
                 
