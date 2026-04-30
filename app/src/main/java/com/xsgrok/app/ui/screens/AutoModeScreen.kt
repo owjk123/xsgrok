@@ -37,6 +37,8 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
     var editOutline by remember { mutableStateOf("") }
     var editWorldBackground by remember { mutableStateOf("") }
     var editPowerSystem by remember { mutableStateOf("") }
+    var editWorldRules by remember { mutableStateOf("") }
+    var editKeyCharacters by remember { mutableStateOf("") }
     
     // P4: 新增设置状态
     var selectedTabooLevel by remember { mutableStateOf(TabooLevel.MODERATE) }
@@ -54,6 +56,11 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
             editOutline = novel.outline
             editWorldBackground = novel.worldBuilding.worldBackground
             editPowerSystem = novel.worldBuilding.powerSystem
+            editWorldRules = novel.worldBuilding.rules
+            editKeyCharacters = novel.characters.joinToString("\n") { char ->
+                if (char.personality.isNotBlank()) "${char.name} - ${char.role} - ${char.description} - ${char.personality}"
+                else "${char.name} - ${char.role} - ${char.description}"
+            }
             
             // P4: 初始化新设置
             selectedTabooLevel = novel.sensoryProfile.tabooLevel
@@ -177,7 +184,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                     value = userPrompt,
                     onValueChange = { userPrompt = it },
                     label = { Text(stringResource(R.string.enter_one_sentence)) },
-                    placeholder = { Text("例如：一个修仙者在末世求生的故事") },
+                    placeholder = { Text("例如：一个都市女孩追寻梦想的故事") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     maxLines = 4
@@ -501,9 +508,32 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                                 },
                                 label = { Text("小说大纲") },
                                 modifier = Modifier.fillMaxWidth(),
-                                minLines = 5,
-                                maxLines = 15
+                                minLines = 4,
+                                maxLines = 12
                             )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // 世界设定卡片
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Public,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "世界设定",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
                             
                             Spacer(modifier = Modifier.height(12.dp))
                             
@@ -516,7 +546,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                                 label = { Text("世界背景") },
                                 modifier = Modifier.fillMaxWidth(),
                                 minLines = 2,
-                                maxLines = 4
+                                maxLines = 5
                             )
                             
                             Spacer(modifier = Modifier.height(12.dp))
@@ -527,10 +557,69 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                                     editPowerSystem = it
                                     viewModel.updateAutoModeNovel(powerSystem = it)
                                 },
-                                label = { Text("力量体系") },
+                                label = { Text("力量体系（非战斗类可留空）") },
                                 modifier = Modifier.fillMaxWidth(),
                                 minLines = 2,
                                 maxLines = 4
+                            )
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            OutlinedTextField(
+                                value = editWorldRules,
+                                onValueChange = { 
+                                    editWorldRules = it
+                                    viewModel.updateAutoModeNovel(worldRules = it)
+                                },
+                                label = { Text("世界规则") },
+                                modifier = Modifier.fillMaxWidth(),
+                                minLines = 2,
+                                maxLines = 4
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // 关键人物卡片
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.People,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "关键人物",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "每行一个角色，格式：姓名 - 身份/角色 - 简介 - 性格关键词",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            OutlinedTextField(
+                                value = editKeyCharacters,
+                                onValueChange = { 
+                                    editKeyCharacters = it
+                                    viewModel.updateAutoModeKeyCharacters(it)
+                                },
+                                placeholder = { Text("林晓 - 主角 - 普通大学生 - 好奇心强\n苏老师 - 配角 - 神秘导师 - 冷静睿智") },
+                                modifier = Modifier.fillMaxWidth(),
+                                minLines = 4,
+                                maxLines = 10
                             )
                         }
                     }

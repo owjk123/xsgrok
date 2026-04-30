@@ -941,34 +941,30 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                     apiKey = config.apiKey,
                     endpoint = config.endpoint,
                     model = config.model,
-                    systemPrompt = "你是一个全能型小说创作顾问，精通玄幻、都市、言情、悬疑、科幻、历史、日常等各类型小说创作。请根据用户的创作意图，智能判断小说类型，生成匹配的基础设定。严格按照JSON格式输出。",
+                    systemPrompt = "你是一个全能型小说创作顾问，精通各类型小说创作。请根据用户意图智能判断类型，生成精简实用的基础设定。严格按JSON格式输出，不要添加任何多余内容。",
                     userPrompt = """
                         用户想写：$userPrompt
                         
-                        请先分析用户意图，判断最适合的小说类型，然后生成完整的基础设定。
+                        请分析用户意图，判断小说类型，生成精简基础设定。
                         
-                        【重要原则】
-                        - 类型由内容决定，不要默认往玄幻/战斗方向靠
-                        - 都市、言情、悬疑、日常、科幻、历史等都可能，务必根据用户意图匹配
-                        - 力量体系/势力组织等字段，如果该类型不需要，填空字符串""或空数组[]
-                        - 世界背景应根据类型调整：玄幻写修炼世界，都市写社会环境，言情写人物关系网，悬疑写案件背景
-                        
-                        请生成：
-                        1. 小说标题（有创意且吸引人）
-                        2. 类型（根据用户意图判断，如：都市言情/悬疑推理/日常治愈/玄幻修仙/科幻未来/历史架空/职场商战/校园青春等）
-                        3. 风格（与类型匹配，如：温馨细腻/紧张烧脑/轻松幽默/热血激昂/深沉厚重等）
-                        4. 主角设定（姓名、性格、核心特征，注意：不是所有主角都需要"特殊能力"）
-                        5. 详细大纲（500字左右，包含开头、发展、高潮、结局）
-                        6. 世界背景（根据类型调整：玄幻→修炼世界；都市→社会环境；言情→关系网背景；悬疑→案件背景；日常→生活圈环境）
-                        7. 力量体系（仅玄幻/仙侠/科幻需要，其他类型填""）
-                        8. 世界规则（社会规则/禁忌/核心矛盾，100字以上）
-                        9. 关键节点（8-10个故事关键转折点，格式：节点标题|节点描述）
-                        10. 主要角色（至少3个，含配角和对手/反派，abilities字段非战斗类填""）
-                        11. 重要地点（至少3个，type根据类型调整：城市/街区/办公室/学校/秘境/星球等）
-                        12. 势力组织（至少2个，如类型不需要组织可填空数组[]）
+                        【核心原则】
+                        - 类型由内容决定，不要默认偏向玄幻/战斗
+                        - 角色只用"主角/配角/关键人物"，不要预设"反派"
+                        - 力量体系仅玄幻/仙侠/科幻需要，其他类型填""
+                        - 世界背景根据类型自适应
+
+                        生成内容：
+                        1. 标题（有创意且吸引人）
+                        2. 类型（都市言情/悬疑推理/日常治愈/玄幻修仙/科幻未来/历史架空/职场商战/校园青春等）
+                        3. 风格（温馨细腻/紧张烧脑/轻松幽默/热血激昂/深沉厚重等）
+                        4. 主角设定（姓名、性格、核心特征）
+                        5. 大纲（300字左右，包含开头、发展、高潮、结局）
+                        6. 世界背景（根据类型调整，100字左右）
+                        7. 关键人物（3-5个，包含姓名、身份、与主角关系、性格关键词）
+                        8. 关键节点（6-8个，格式：节点标题|节点描述）
                         
                         严格按JSON格式输出：
-                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"详细大纲\n关键节点：\n1. 开篇\n2. ...","worldBackground":"世界背景","powerSystem":"力量体系(非战斗类填空)","worldRules":"世界规则","characters":[{"name":"角色名","description":"描述","role":"主角/配角/对手/反派","appearance":"外貌","personality":"性格","background":"背景","abilities":"能力(无则填空)","relationships":"关系"}],"locations":[{"name":"地名","description":"描述","type":"类型","significance":"重要性"}],"factions":[{"name":"势力名","description":"描述","leader":"首领","goals":"目标","relationships":"与其他势力关系"}]}
+                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"大纲\n关键节点：\n1. 开篇\n2. ...","worldBackground":"世界背景","keyCharacters":"关键人物描述（每人一行：姓名-身份-与主角关系-性格）","powerSystem":""}
                     """.trimIndent()
                 ).collect { content ->
                     if (content.startsWith("[ERROR]")) {
@@ -995,31 +991,36 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 // 解析并创建待审阅的小说
                 val outlineText = extractField(outlineResult, "outline") ?: outlineResult
                 val keyNodes = parseKeyNodesFromOutline(outlineText)
+                val keyCharactersText = extractField(outlineResult, "keyCharacters") ?: ""
                 
-                // 解析角色数组
-                val characters = parseCharacterArray(outlineResult)
-                
-                // 解析地点数组
-                val locations = parseLocationArray(outlineResult)
-                
-                // 解析势力数组
-                val factions = parseFactionArray(outlineResult)
+                // 简化角色解析：从keyCharacters文本生成角色列表
+                val characters = mutableListOf<Character>()
+                if (keyCharactersText.isNotBlank()) {
+                    keyCharactersText.split("\n").forEach { line ->
+                        val parts = line.split("-")
+                        if (parts.isNotEmpty() && parts[0].isNotBlank()) {
+                            characters.add(Character(
+                                name = parts[0].trim(),
+                                description = if (parts.size > 1) parts.drop(1).joinToString("-").trim() else "",
+                                role = if (parts.size > 2) parts[2].trim() else "配角",
+                                personality = if (parts.size > 3) parts[3].trim() else ""
+                            ))
+                        }
+                    }
+                }
                 
                 val novel = Novel(
                     title = extractField(outlineResult, "title") ?: "未命名小说",
                     type = extractField(outlineResult, "type") ?: "",
                     style = extractField(outlineResult, "style") ?: "",
-                    mainCharacter = extractField(outlineResult, "mainCharacter") ?: "主角",
+                    mainCharacter = extractField(outlineResult, "mainCharacter") ?: "",
                     outline = outlineText,
-                    characters = characters.toMutableList(),
+                    characters = characters,
                     worldBuilding = WorldBuilding(
                         worldBackground = extractField(outlineResult, "worldBackground") ?: "",
-                        powerSystem = extractField(outlineResult, "powerSystem") ?: "",
-                        geography = locations.toMutableList(),
-                        factions = factions.toMutableList(),
-                        rules = extractField(outlineResult, "worldRules") ?: ""
+                        powerSystem = extractField(outlineResult, "powerSystem") ?: ""
                     ),
-                    keyNodes = keyNodes.toMutableList()  // P0：添加关键节点
+                    keyNodes = keyNodes.toMutableList()
                 )
                 
                 // 初始化Agent系统
@@ -1048,7 +1049,8 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         mainCharacter: String? = null,
         outline: String? = null,
         worldBackground: String? = null,
-        powerSystem: String? = null
+        powerSystem: String? = null,
+        worldRules: String? = null
     ) {
         val novel = _autoModeNovel.value ?: return
         _autoModeNovel.value = novel.copy(
@@ -1059,9 +1061,31 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             outline = outline ?: novel.outline,
             worldBuilding = novel.worldBuilding.copy(
                 worldBackground = worldBackground ?: novel.worldBuilding.worldBackground,
-                powerSystem = powerSystem ?: novel.worldBuilding.powerSystem
+                powerSystem = powerSystem ?: novel.worldBuilding.powerSystem,
+                rules = worldRules ?: novel.worldBuilding.rules
             )
         )
+    }
+    
+    // 更新关键人物（从文本解析为Character列表）
+    fun updateAutoModeKeyCharacters(text: String) {
+        val novel = _autoModeNovel.value ?: return
+        val characters = mutableListOf<Character>()
+        text.split("\n").forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.isNotBlank()) {
+                val parts = trimmed.split(" - ").map { it.trim() }
+                if (parts.isNotEmpty() && parts[0].isNotBlank()) {
+                    characters.add(Character(
+                        name = parts[0],
+                        role = parts.getOrElse(1) { "配角" },
+                        description = parts.getOrElse(2) { "" },
+                        personality = parts.getOrElse(3) { "" }
+                    ))
+                }
+            }
+        }
+        _autoModeNovel.value = novel.copy(characters = characters)
     }
     
     // 确认资料并开始写作

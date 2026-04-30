@@ -11,8 +11,8 @@ android {
         applicationId = "com.xsgrok.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "2.3.0"
+        versionCode = 6
+        versionName = "2.3.1"
         vectorDrawables { useSupportLibrary = true }
     }
 
