@@ -89,8 +89,8 @@
     <!-- World Building -->
     <string name="world_background">World Background</string>
     <string name="world_background_hint">Describe the world setting...</string>
-    <string name="power_system">Power System</string>
-    <string name="power_system_hint">Describe the power/level system...</string>
+    <string name="power_system">核心设定</string>
+    <string name="power_system_hint">如：修炼等级/感情线框架/社会阶层/科技体系等，无则留空</string>
     <string name="world_rules">World Rules</string>
     <string name="world_rules_hint">Special rules of this world...</string>
     <string name="locations">Locations</string>

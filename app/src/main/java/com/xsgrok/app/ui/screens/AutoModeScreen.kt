@@ -557,7 +557,7 @@ fun AutoModeScreen(viewModel: XSGrokViewModel) {
                                     editPowerSystem = it
                                     viewModel.updateAutoModeNovel(powerSystem = it)
                                 },
-                                label = { Text("力量体系（非战斗类可留空）") },
+                                label = { Text("核心设定") },
                                 modifier = Modifier.fillMaxWidth(),
                                 minLines = 2,
                                 maxLines = 4

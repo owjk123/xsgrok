@@ -672,7 +672,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 2. 世界的地理环境
                 3. 社会结构和文化
                 4. 重要势力和种族
-                5. 力量体系
+                5. 核心设定
                 
                 请用中文回答，详细且有创意。
             """.trimIndent()
@@ -717,7 +717,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             _isGenerating.value = true
             
             val prompt = """
-                为小说《${novel.title}》设计力量体系。
+                为小说《${novel.title}》设计核心设定（如修炼体系/感情线框架/社会阶层等）。
                 
                 世界背景：${novel.worldBuilding.worldBackground}
                 
@@ -769,7 +769,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 为小说《${novel.title}》生成地点/场景。
                 
                 世界背景：${novel.worldBuilding.worldBackground}
-                力量体系：${novel.worldBuilding.powerSystem}
+                核心设定：${novel.worldBuilding.powerSystem}
                 
                 请生成3-5个地点，每个一行：
                 地点名|地点类型|地点描述|重要程度
@@ -884,7 +884,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                 为小说《${novel.title}》生成${typeName}。
                 
                 世界背景：${novel.worldBuilding.worldBackground}
-                力量体系：${novel.worldBuilding.powerSystem}
+                核心设定：${novel.worldBuilding.powerSystem}
                 
                 请生成3-5个${typeName}，每个一行：
                 名称|描述
@@ -950,7 +950,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                         【核心原则】
                         - 类型由内容决定，不要默认偏向玄幻/战斗
                         - 角色只用"主角/配角/关键人物"，不要预设"反派"
-                        - 力量体系仅玄幻/仙侠/科幻需要，其他类型填""
+                        - 核心设定：玄幻填修炼体系，言情填感情线框架，都市填社会规则，日常可留空
                         - 世界背景根据类型自适应
 
                         生成内容：
@@ -964,7 +964,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
                         8. 关键节点（6-8个，格式：节点标题|节点描述）
                         
                         严格按JSON格式输出：
-                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"大纲\n关键节点：\n1. 开篇\n2. ...","worldBackground":"世界背景","keyCharacters":"关键人物描述（每人一行：姓名-身份-与主角关系-性格）","powerSystem":""}
+                        {"title":"标题","type":"类型","style":"风格","mainCharacter":"主角设定","outline":"大纲\n关键节点：\n1. 开篇\n2. ...","worldBackground":"世界背景","keyCharacters":"关键人物描述（每人一行：姓名-身份-与主角关系-性格）","powerSystem":"核心设定内容或留空"}
                     """.trimIndent()
                 ).collect { content ->
                     if (content.startsWith("[ERROR]")) {
@@ -1375,7 +1375,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             世界观：
             ${novel.worldBuilding.worldBackground}
             
-            力量体系：
+            核心设定：
             ${novel.worldBuilding.powerSystem}
             
             写作要求：
@@ -1439,7 +1439,7 @@ ${if (isConvergence) "\n⚠️ 收束模式：必须在本章回收至少一条�
 世界背景：
 ${novel.worldBuilding.worldBackground}
 
-力量体系：
+核心设定：
 ${novel.worldBuilding.powerSystem}
 
 大纲：

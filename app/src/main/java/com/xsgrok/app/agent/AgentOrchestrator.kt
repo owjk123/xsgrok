@@ -101,7 +101,7 @@ class AgentOrchestrator {
                 appendLine("世界背景：${novel.worldBuilding.worldBackground}")
             }
             if (novel.worldBuilding.powerSystem.isNotBlank()) {
-                appendLine("力量体系：${novel.worldBuilding.powerSystem}")
+                appendLine("核心设定：${novel.worldBuilding.powerSystem}")
             }
             if (novel.worldBuilding.rules.isNotBlank()) {
                 appendLine("世界规则：${novel.worldBuilding.rules}")

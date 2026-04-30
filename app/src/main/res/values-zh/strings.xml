@@ -89,8 +89,8 @@
     <!-- 世界观 -->
     <string name="world_background">世界背景</string>
     <string name="world_background_hint">描述世界设定...</string>
-    <string name="power_system">力量体系</string>
-    <string name="power_system_hint">描述力量/等级体系...</string>
+    <string name="power_system">核心设定</string>
+    <string name="power_system_hint">如：修炼等级/感情线框架/社会阶层/科技体系等，无则留空</string>
     <string name="world_rules">世界规则</string>
     <string name="world_rules_hint">这个世界的特殊规则...</string>
     <string name="locations">地理场景</string>

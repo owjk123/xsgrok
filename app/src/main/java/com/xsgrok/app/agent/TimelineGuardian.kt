@@ -146,7 +146,7 @@ class TimelineGuardian {
         novel: Novel, content: String,
         issues: MutableList<ConsistencyIssue>, chapterNum: Int
     ) {
-        // 检查力量体系限制是否被违反
+        // 检查核心设定限制是否被违反
         val powerSystem = novel.worldBuilding.powerSystem
         if (powerSystem.isNotBlank()) {
             // 提取等级限制关键词
