@@ -1,6 +1,7 @@
 package com.xsgrok.app.data.model
 
 import com.google.gson.Gson
+import java.util.UUID
 
 /**
  * 精简后的数据模型 - 第一性原理优化
@@ -14,7 +15,7 @@ import com.google.gson.Gson
  * 只保留生成真正需要的字段
  */
 data class Novel(
-    val id: String = System.currentTimeMillis().toString(),
+    val id: String = UUID.randomUUID().toString(),
     val title: String,
     val genre: String = "",
     val style: String = "",
@@ -66,7 +67,7 @@ data class Novel(
  * 章节
  */
 data class Chapter(
-    val id: String = System.currentTimeMillis().toString(),
+    val id: String = UUID.randomUUID().toString(),
     val title: String,
     val content: String,
     val order: Int,
@@ -79,7 +80,7 @@ data class Chapter(
  * 角色
  */
 data class Character(
-    val id: String = System.currentTimeMillis().toString(),
+    val id: String = UUID.randomUUID().toString(),
     val name: String,
     val description: String,
     val role: String = "配角"
@@ -98,7 +99,7 @@ data class WorldBuilding(
  * 关键节点
  */
 data class KeyNode(
-    val id: String = System.currentTimeMillis().toString(),
+    val id: String = UUID.randomUUID().toString(),
     val title: String,
     val description: String = "",
     val targetChapter: Int = 0,
@@ -109,7 +110,7 @@ data class KeyNode(
  * 伏笔
  */
 data class Foreshadowing(
-    val id: String = System.currentTimeMillis().toString(),
+    val id: String = UUID.randomUUID().toString(),
     val content: String,
     val plantedChapter: Int,
     val isResolved: Boolean = false,

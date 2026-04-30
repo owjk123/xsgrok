@@ -13,6 +13,7 @@ import com.xsgrok.app.data.model.ApiConfig
 import com.xsgrok.app.data.model.Novel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "xsgrok_prefs")
 
@@ -81,13 +82,11 @@ class LocalStorage(private val context: Context) {
     }
     
     suspend fun getNovel(novelId: String): Novel? {
-        var result: Novel? = null
-        context.dataStore.edit { prefs ->
+        return context.dataStore.data.map { prefs ->
             val json = prefs[NOVELS] ?: "[]"
             val type = object : TypeToken<List<Novel>>() {}.type
             val novelList: List<Novel> = gson.fromJson(json, type) ?: emptyList()
-            result = novelList.find { it.id == novelId }
-        }
-        return result
+            novelList.find { it.id == novelId }
+        }.first()
     }
 }

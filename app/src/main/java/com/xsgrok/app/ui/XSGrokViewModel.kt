@@ -211,8 +211,8 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     // ========== 章节生成 ==========
     fun generateChapter(novelId: String, chapterTitle: String?) {
         if (_isGenerating.value) return
-        
-        viewModelScope.launch {
+        generationJob?.cancel()
+        generationJob = viewModelScope.launch {
             val novel = localStorage.getNovel(novelId) ?: return@launch
             
             _isGenerating.value = true
@@ -278,8 +278,8 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     
     fun continueChapter(novelId: String, guide: String?) {
         if (_isGenerating.value) return
-        
-        viewModelScope.launch {
+        generationJob?.cancel()
+        generationJob = viewModelScope.launch {
             val novel = localStorage.getNovel(novelId) ?: return@launch
             
             _isGenerating.value = true
@@ -358,8 +358,8 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     // ========== 自动模式核心流程 ==========
     fun startAutoMode(userPrompt: String) {
         if (_isGenerating.value) return
-        
-        viewModelScope.launch {
+        generationJob?.cancel()
+        generationJob = viewModelScope.launch {
             _autoModeState.value = AutoModeState.GENERATING
             _isGenerating.value = true
             _streamingContent.value = ""
@@ -419,7 +419,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     private suspend fun createTempNovel(idea: String): Novel {
         val novel = Novel(
             title = "新小说",
-            mainCharacter = idea
+            outline = idea
         )
         localStorage.saveNovel(novel)
         _currentNovel.value = novel
@@ -436,8 +436,10 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             order = chapterNum
         )
         
-        novel.chapters.add(chapter)
-        val updatedNovel = novel.copy(updatedAt = System.currentTimeMillis())
+        val updatedNovel = novel.copy(
+            chapters = (novel.chapters + chapter).toMutableList(),
+            updatedAt = System.currentTimeMillis()
+        )
         localStorage.saveNovel(updatedNovel)
         _currentNovel.value = updatedNovel
     }
@@ -496,16 +498,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         _currentPreset.value = GenerationPresets.getById(presetId)
     }
     
-    // ========== 兼容性方法 ==========
-    private val _generationMode = MutableStateFlow("single")
-    val generationMode: StateFlow<String> = _generationMode.asStateFlow()
-    
-    fun setGenerationMode(mode: String) {
-        _generationMode.value = mode
-    }
-    
-    private val _currentPresetId = MutableStateFlow("balanced")
-    val currentPresetId: StateFlow<String> = _currentPresetId.asStateFlow()
+    // ========== 兼容性方法（已清理） ==========
     
     // ========== 错误处理 ==========
     fun clearError() {
