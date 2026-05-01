@@ -83,12 +83,12 @@ fun WorldBuildingScreen(viewModel: XSGrokViewModel) {
 @Composable
 fun FoundationSettingsTab(novel: Novel, viewModel: XSGrokViewModel) {
     // 本地状态，用于编辑
-    var characterSettings by remember { mutableStateOf(novel.foundation.characterSettings) }
-    var characterRelationships by remember { mutableStateOf(novel.foundation.characterRelationships) }
-    var timeline by remember { mutableStateOf(novel.foundation.timeline) }
-    var chapterPlotDirection by remember { mutableStateOf(novel.foundation.chapterPlotDirection) }
-    var writingStyle by remember { mutableStateOf(novel.foundation.writingStyle) }
-    var chapterSummaries by remember { mutableStateOf(novel.foundation.chapterSummaries) }
+    var characterSettings by remember { mutableStateOf(novel.foundation?.characterSettings ?: "") }
+    var characterRelationships by remember { mutableStateOf(novel.foundation?.characterRelationships ?: "") }
+    var timeline by remember { mutableStateOf(novel.foundation?.timeline ?: "") }
+    var chapterPlotDirection by remember { mutableStateOf(novel.foundation?.chapterPlotDirection ?: "") }
+    var writingStyle by remember { mutableStateOf(novel.foundation?.writingStyle ?: "") }
+    var chapterSummaries by remember { mutableStateOf(novel.foundation?.chapterSummaries ?: "") }
     
     Column(
         modifier = Modifier

@@ -167,7 +167,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             val novel = localStorage.getNovel(novelId) ?: return@launch
             val updated = novel.copy(
-                foundation = novel.foundation.copy(
+                foundation = (novel.foundation ?: NovelFoundation()).copy(
                     characterSettings = characterSettings,
                     characterRelationships = characterRelationships,
                     timeline = timeline,

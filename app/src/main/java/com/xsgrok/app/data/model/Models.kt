@@ -33,7 +33,7 @@ data class Novel(
     val genre: String = "",
     val style: String = "",
     val outline: String = "",  // 额外备注（可选）
-    val foundation: NovelFoundation = NovelFoundation(),  // 六大基础设定
+    val foundation: NovelFoundation? = null,  // 六大基础设定
     val chapters: MutableList<Chapter> = mutableListOf(),
     val characters: MutableList<Character> = mutableListOf(),
     val createdAt: Long = System.currentTimeMillis(),
@@ -58,7 +58,7 @@ data class Novel(
     }
     
     fun getProgressHint(currentChapter: Int): String {
-        val direction = foundation.chapterPlotDirection
+        val direction = foundation?.chapterPlotDirection ?: ""
         return if (direction.isNotBlank()) {
             "【第${currentChapter}章】$direction"
         } else {
@@ -70,7 +70,7 @@ data class Novel(
      * 获取章节摘要（用于生成提示）
      */
     fun getChapterSummariesForPrompt(): String {
-        val summary = foundation.chapterSummaries
+        val summary = foundation?.chapterSummaries ?: ""
         return if (summary.isNotBlank()) {
             summary
         } else if (chapters.isNotEmpty()) {
