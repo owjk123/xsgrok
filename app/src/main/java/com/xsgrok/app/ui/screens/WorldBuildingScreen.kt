@@ -1,6 +1,8 @@
 package com.xsgrok.app.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -327,7 +329,7 @@ fun SimpleCharactersTab(novel: Novel, viewModel: XSGrokViewModel) {
     
     Column(modifier = Modifier.fillMaxSize()) {
         // 角色列表
-        androidx.compose.foundation.lazy.LazyColumn(
+        LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .padding(16.dp),

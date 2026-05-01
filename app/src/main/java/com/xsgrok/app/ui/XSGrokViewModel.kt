@@ -363,9 +363,6 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     // ========== AI生成辅助 ==========
-    fun generateWorldBuilding(novelId: String, prompt: String) {
-        // 简化实现：暂不支持
-    }
     
     fun generateCharacters(novelId: String, prompt: String) {
         // 简化实现：暂不支持

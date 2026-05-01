@@ -21,6 +21,7 @@ fun NewNovelScreen(viewModel: XSGrokViewModel) {
     var title by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("玄幻") }
     var selectedStyle by remember { mutableStateOf("热血") }
+    var typeExpanded by remember { mutableStateOf(false) }
     var styleExpanded by remember { mutableStateOf(false) }
     
     val types = listOf("玄幻", "都市", "科幻", "悬疑", "冒险", "历史", "恐怖", "喜剧", "言情", "武侠")
@@ -117,16 +118,6 @@ fun NewNovelScreen(viewModel: XSGrokViewModel) {
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                OutlinedTextField(
-                    label = { Text(stringResource(R.string.main_character)) },
-                    placeholder = { Text(stringResource(R.string.describe_main_character)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    maxLines = 4
-                )
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
