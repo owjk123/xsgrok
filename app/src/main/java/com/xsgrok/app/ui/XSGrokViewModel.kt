@@ -113,7 +113,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
     }
     
     // ========== 小说管理 ==========
-    fun createNovel(title: String, genre: String, style: String, mainCharacter: String) {
+    fun createNovel(title: String, genre: String, style: String) {
         viewModelScope.launch {
             val novel = Novel(
                 title = title,
@@ -155,12 +155,27 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
     
-    fun updateWorldBuilding(novelId: String, worldBackground: String, powerSystem: String, rules: String) {
+    fun updateNovelFoundation(
+        novelId: String,
+        characterSettings: String = "",
+        characterRelationships: String = "",
+        timeline: String = "",
+        chapterPlotDirection: String = "",
+        writingStyle: String = "",
+        chapterSummaries: String = ""
+    ) {
         viewModelScope.launch {
             val novel = localStorage.getNovel(novelId) ?: return@launch
-            // 保留旧字段以便兼容，但主要使用 foundation
             val updated = novel.copy(
-                outline = "$worldBackground\n$powerSystem\n$rules"
+                foundation = novel.foundation.copy(
+                    characterSettings = characterSettings,
+                    characterRelationships = characterRelationships,
+                    timeline = timeline,
+                    chapterPlotDirection = chapterPlotDirection,
+                    writingStyle = writingStyle,
+                    chapterSummaries = chapterSummaries
+                ),
+                updatedAt = System.currentTimeMillis()
             )
             localStorage.saveNovel(updated)
             _currentNovel.value = updated

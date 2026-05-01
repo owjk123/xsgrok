@@ -286,7 +286,7 @@ private fun IdleContent(
  * GENERATING_FOUNDATION 状态：正在生成基础设定
  */
 @Composable
-private fun GeneratingFoundationContent(
+private fun ColumnScope.GeneratingFoundationContent(
     streamingContent: String,
     isGenerating: Boolean,
     onStop: () -> Unit
@@ -364,7 +364,7 @@ private fun GeneratingFoundationContent(
  * REVIEW_FOUNDATION 状态：审阅基础设定（可编辑）
  */
 @Composable
-private fun ReviewFoundationContent(
+private fun ColumnScope.ReviewFoundationContent(
     foundation: com.xsgrok.app.data.model.NovelFoundation,
     novelTitle: String,
     onFoundationUpdate: (String, String) -> Unit,
@@ -544,7 +544,7 @@ private fun FoundationCard(
  * GENERATING_CHAPTER 状态：正在生成章节
  */
 @Composable
-private fun GeneratingChapterContent(
+private fun ColumnScope.GeneratingChapterContent(
     streamingContent: String,
     isGenerating: Boolean,
     onStop: () -> Unit
