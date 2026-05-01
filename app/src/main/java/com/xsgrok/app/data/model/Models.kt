@@ -11,6 +11,19 @@ import java.util.UUID
 // ========== 核心数据模型 ==========
 
 /**
+ * 小说基础设定 - 六大模块
+ * 由AI从一句话自动分解补全
+ */
+data class NovelFoundation(
+    val characterSettings: String = "",      // 角色设定
+    val characterRelationships: String = "", // 人物关系
+    val timeline: String = "",               // 时间线
+    val chapterPlotDirection: String = "",   // 章节主要剧情走向
+    val writingStyle: String = "",           // 写作风格
+    val chapterSummaries: String = ""        // 目前为止的章节摘要（自动更新）
+)
+
+/**
  * 小说主体 - 精简版
  * 只保留生成真正需要的字段
  */
@@ -19,15 +32,10 @@ data class Novel(
     val title: String,
     val genre: String = "",
     val style: String = "",
-    val mainCharacter: String = "",
-    val outline: String = "",
-    val globalSummary: String = "",
+    val outline: String = "",  // 额外备注（可选）
+    val foundation: NovelFoundation = NovelFoundation(),  // 六大基础设定
     val chapters: MutableList<Chapter> = mutableListOf(),
     val characters: MutableList<Character> = mutableListOf(),
-    val worldBuilding: WorldBuilding = WorldBuilding(),
-    val keyNodes: MutableList<KeyNode> = mutableListOf(),
-    val foreshadowings: MutableList<Foreshadowing> = mutableListOf(),
-    val currentNodeIndex: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
@@ -50,16 +58,26 @@ data class Novel(
     }
     
     fun getProgressHint(currentChapter: Int): String {
-        return if (keyNodes.isNotEmpty()) {
-            val currentNode = keyNodes.getOrNull(currentNodeIndex)
-            "【第${currentChapter}章】${currentNode?.title ?: "进行中"}"
+        val direction = foundation.chapterPlotDirection
+        return if (direction.isNotBlank()) {
+            "【第${currentChapter}章】$direction"
         } else {
             "【第${currentChapter}章】"
         }
     }
     
-    fun getUnresolvedForeshadowings(): List<Foreshadowing> {
-        return foreshadowings.filter { !it.isResolved }
+    /**
+     * 获取章节摘要（用于生成提示）
+     */
+    fun getChapterSummariesForPrompt(): String {
+        val summary = foundation.chapterSummaries
+        return if (summary.isNotBlank()) {
+            summary
+        } else if (chapters.isNotEmpty()) {
+            getRecentSummaries(3)
+        } else {
+            "（暂无章节摘要）"
+        }
     }
 }
 
@@ -84,47 +102,6 @@ data class Character(
     val name: String,
     val description: String,
     val role: String = "配角"
-)
-
-/**
- * 世界观设定 - 精简版
- */
-data class WorldBuilding(
-    val worldBackground: String = "",
-    val powerSystem: String = "",
-    val rules: String = ""
-)
-
-/**
- * 关键节点
- */
-data class KeyNode(
-    val id: String = UUID.randomUUID().toString(),
-    val title: String,
-    val description: String = "",
-    val targetChapter: Int = 0,
-    val isCompleted: Boolean = false
-)
-
-/**
- * 伏笔
- */
-data class Foreshadowing(
-    val id: String = UUID.randomUUID().toString(),
-    val content: String,
-    val plantedChapter: Int,
-    val isResolved: Boolean = false,
-    val resolvedChapter: Int? = null
-)
-
-/**
- * 伏笔统计
- */
-data class ForeshadowingStats(
-    val total: Int,
-    val unresolved: Int,
-    val resolved: Int,
-    val resolutionRate: Float
 )
 
 // ========== 生成配置 ==========
@@ -209,8 +186,9 @@ data class ChatRequest(
 // ========== 简化版生成状态 ==========
 
 enum class AutoModeState {
-    IDLE,
-    GENERATING,
-    REVIEW,
-    COMPLETED
+    IDLE,                    // 空闲，等待输入
+    GENERATING_FOUNDATION,   // 正在生成基础设定
+    REVIEW_FOUNDATION,       // 审阅基础设定（可编辑）
+    GENERATING_CHAPTER,      // 正在生成章节
+    COMPLETED                // 章节生成完成
 }
