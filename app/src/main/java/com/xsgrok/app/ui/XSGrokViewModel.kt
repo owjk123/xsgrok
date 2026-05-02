@@ -106,6 +106,69 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
             localStorage.saveApiConfig(config)
         }
     }
+
+    fun updateModel(model: String) {
+        viewModelScope.launch {
+            val config = _uiState.value.apiConfig.copy(model = model)
+            localStorage.saveApiConfig(config)
+        }
+    }
+
+    fun testApiConnection(
+        apiKey: String,
+        endpoint: String,
+        model: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                var connection: java.net.HttpURLConnection? = null
+                try {
+                    val url = java.net.URL("$endpoint/chat/completions")
+                    connection = url.openConnection() as java.net.HttpURLConnection
+                    connection.requestMethod = "POST"
+                    connection.setRequestProperty("Content-Type", "application/json")
+                    connection.setRequestProperty("Authorization", "Bearer $apiKey")
+                    connection.doOutput = true
+                    connection.connectTimeout = 15000
+                    connection.readTimeout = 15000
+                    
+                    val requestBody = """
+                        {
+                            "model": "$model",
+                            "messages": [{"role": "user", "content": "hi"}],
+                            "max_tokens": 5
+                        }
+                    """.trimIndent()
+                    
+                    connection.outputStream.use { os ->
+                        os.write(requestBody.toByteArray())
+                    }
+                    
+                    val responseCode = connection.responseCode
+                    val message = when {
+                        responseCode in 200..299 -> "连接成功"
+                        responseCode == 401 -> "API Key无效"
+                        responseCode == 403 -> "访问被拒绝"
+                        responseCode == 429 -> "请求过于频繁"
+                        else -> "HTTP $responseCode"
+                    }
+                    
+                    onResult(responseCode in 200..299, message)
+                    
+                } finally {
+                    connection?.disconnect()
+                }
+            } catch (e: Exception) {
+                val message = when {
+                    e.message?.contains("timeout", ignoreCase = true) == true -> "连接超时"
+                    e.message?.contains("connection", ignoreCase = true) == true -> "连接失败"
+                    else -> "连接失败"
+                }
+                onResult(false, message)
+            }
+        }
+    }
     
     // ========== 导航 ==========
     fun navigateTo(screen: Screen) {
