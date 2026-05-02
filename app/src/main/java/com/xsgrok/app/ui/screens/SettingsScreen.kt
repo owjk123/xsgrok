@@ -118,9 +118,10 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
                 Spacer(modifier = Modifier.height(12.dp))
                 
                 // 模型选择
+                var modelExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
-                    expanded = false,
-                    onExpandedChange = { }
+                    expanded = modelExpanded,
+                    onExpandedChange = { modelExpanded = it }
                 ) {
                     OutlinedTextField(
                         value = model,
@@ -129,12 +130,27 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
                             viewModel.updateModel(it)
                         },
                         label = { Text(stringResource(R.string.model)) },
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) },
+                        readOnly = false,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor()
                     )
+                    ExposedDropdownMenu(
+                        expanded = modelExpanded,
+                        onDismissRequest = { modelExpanded = false }
+                    ) {
+                        models.forEach { modelOption ->
+                            DropdownMenuItem(
+                                text = { Text(modelOption) },
+                                onClick = {
+                                    model = modelOption
+                                    viewModel.updateModel(modelOption)
+                                    modelExpanded = false
+                                }
+                            )
+                        }
+                    }
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))

@@ -2,52 +2,59 @@ package com.xsgrok.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ========== 文学色系主题 ==========
-// 灵感来源：古籍书卷、墨香、暖色调
+// ========== 文学色系 - 浅色 ==========
+val PrimaryLight = Color(0xFF5D4037)        // 墨棕 - 主色
+val OnPrimaryLight = Color(0xFFFFFFFF)
+val PrimaryContainerLight = Color(0xFFD7CCC8) // 浅棕
+val OnPrimaryContainerLight = Color(0xFF321911)
 
-// 浅色模式色系
-val InkBrown = Color(0xFF5D4037)           // 墨棕 - 主色
-val WarmGold = Color(0xFFD4A574)            // 暖金 - 辅助色
-val LightBrown = Color(0xFF8D6E63)          // 浅棕
-val CreamWhite = Color(0xFFF5F0E8)         // 米白 - 背景色
-val PaperWhite = Color(0xFFFFFBF5)         // 纸张白
-val DeepBrown = Color(0xFF3E2723)           // 深棕 - 文字色
+val SecondaryLight = Color(0xFF795548)      // 暖棕
+val OnSecondaryLight = Color(0xFFFFFFFF)
+val SecondaryContainerLight = Color(0xFFEFEBE9)
+val OnSecondaryContainerLight = Color(0xFF2C1810)
 
-// 深色模式色系
-val DarkInkGreen = Color(0xFF2C3E2F)       // 深墨绿
-val DarkBrown = Color(0xFF3E2723)          // 暗棕
-val MutedGold = Color(0xFFB8956E)          // 柔和金
-val DarkSurface = Color(0xFF1A1A1A)        // 深色背景（非纯黑）
-val DarkCard = Color(0xFF252525)            // 深色卡片背景
-val LightTextDark = Color(0xFFE8E0D5)      // 深色模式浅色文字
+val TertiaryLight = Color(0xFF8D6E63)       // 柔棕
+val OnTertiaryLight = Color(0xFFFFFFFF)
+val TertiaryContainerLight = Color(0xFFFFCCBC)
+val OnTertiaryContainerLight = Color(0xFF3B1E14)
 
-// 功能色
-val SuccessGreen = Color(0xFF4CAF50)       // 成功绿
-val WarningOrange = Color(0xFFFF9800)       // 警告橙
-val ErrorRed = Color(0xFFE53935)            // 错误红
-val InfoBlue = Color(0xFF2196F3)            // 信息蓝
+val SurfaceLight = Color(0xFFFFFBF9)        // 暖白
+val OnSurfaceLight = Color(0xFF1C1209)
+val SurfaceVariantLight = Color(0xFFF5EDE8)
+val OnSurfaceVariantLight = Color(0xFF52443C)
 
-// 复古色系（备选）
-val VintageRed = Color(0xFF8B4513)          // 古红
-val VintageBlue = Color(0xFF4A5568)         // 古蓝
-val VintageGreen = Color(0xFF2D5A27)        // 古绿
+val OutlineLight = Color(0xFF84736A)
+val OutlineVariantLight = Color(0xFFD7C3B8)
 
-// 兼容旧代码
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// ========== 文学色系 - 深色 ==========
+val PrimaryDark = Color(0xFFD4A574)         // 暖金 - 主色
+val OnPrimaryDark = Color(0xFF432818)
+val PrimaryContainerDark = Color(0xFF5C3D2E)
+val OnPrimaryContainerDark = Color(0xFFF5E6DC)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val SecondaryDark = Color(0xFFBCAAA4)       // 浅暖灰
+val OnSecondaryDark = Color(0xFF432818)
+val SecondaryContainerDark = Color(0xFF5C3D2E)
+val OnSecondaryContainerDark = Color(0xFFEFEBE9)
 
-// 新的主色（替换旧紫色）
-val PrimaryLight = InkBrown
-val OnPrimaryLight = Color.White
-val PrimaryContainerLight = Color(0xFFE8DDD5)
-val OnPrimaryContainerLight = DeepBrown
+val TertiaryDark = Color(0xFFBCAAA4)        // 柔灰棕
+val OnTertiaryDark = Color(0xFF432818)
+val TertiaryContainerDark = Color(0xFF5C3D2E)
+val OnTertiaryContainerDark = Color(0xFFFFCCBC)
 
-val PrimaryDark = WarmGold
-val OnPrimaryDark = DarkBrown
-val PrimaryContainerDark = Color(0xFF4A3F35)
-val OnPrimaryContainerDark = LightTextDark
+val SurfaceDark = Color(0xFF1A1512)         // 深墨棕（非纯黑）
+val OnSurfaceDark = Color(0xFFEDE0D8)
+val SurfaceVariantDark = Color(0xFF2C2220)
+val OnSurfaceVariantDark = Color(0xFFD7C3B8)
+
+val OutlineDark = Color(0xFF9F8D83)
+val OutlineVariantDark = Color(0xFF52443C)
+
+// ========== 兼容旧变量 ==========
+val Purple80 = PrimaryDark
+val PurpleGrey80 = SecondaryDark
+val Pink80 = TertiaryDark
+
+val Purple40 = PrimaryLight
+val PurpleGrey40 = SecondaryLight
+val Pink40 = TertiaryLight

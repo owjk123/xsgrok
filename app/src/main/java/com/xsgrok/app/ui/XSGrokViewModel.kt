@@ -287,7 +287,7 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             val novel = localStorage.getNovel(novelId) ?: return@launch
             _currentNovel.value = novel
-            _uiState.value = _uiState.value.copy(currentScreen = Screen.Bookshelf)
+            _uiState.value = _uiState.value.copy(currentScreen = Screen.Create)
         }
     }
     
@@ -904,20 +904,17 @@ class XSGrokViewModel(application: Application) : AndroidViewModel(application) 
 // ========== UI状态 ==========
 data class XSGrokUiState(
     val apiConfig: ApiConfig = ApiConfig(),
-    val currentScreen: Screen = Screen.Creation
+    val currentScreen: Screen = Screen.Create
 )
 
 // ========== 屏幕枚举 ==========
 enum class Screen {
-    Home,
+    Create,
+    Bookshelf,
     Settings,
-    NewNovel,
     NovelDetail,
     Characters,
-    Drafts,
     ChapterGeneration,
-    AutoMode,
-    Bookshelf,
     Reading,
     WorldBuilding
 }
