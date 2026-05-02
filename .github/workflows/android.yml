@@ -57,20 +57,16 @@ jobs:
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
         chmod +x gradlew || true
-        ./gradlew assembleRelease --no-daemon --stacktrace
-        echo "apk_path=$(find . -name '*.apk' -type f 2>/dev/null | head -1)" >> $GITHUB_OUTPUT
-        echo "apk_count=$(find . -name '*.apk' -type f 2>/dev/null | wc -l)" >> $GITHUB_OUTPUT
-    
-    - name: List APK files
-      run: |
-        find . -name '*.apk' -type f 2>/dev/null || echo "No APK files found"
-        ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "APK directory not found"
+        ./gradlew assembleRelease --no-daemon --stacktrace || true
+        ls -la app/build/outputs/apk/release/ || echo "Release dir not found"
+        ls -la app/build/outputs/apk/ || echo "APK dir not found"
     
     - name: Upload APK
-      if: steps.build.outputs.apk_count > 0
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: app-release
         path: |
           app/build/outputs/apk/release/*.apk
+          app/build/outputs/apk/debug/*.apk
         retention-days: 5
