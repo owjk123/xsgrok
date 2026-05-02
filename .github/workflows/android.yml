@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -38,6 +39,7 @@ jobs:
       run: |
         mkdir -p keystore
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore/xsgrok.jks
+        ls -la keystore/
     
     - name: Download Gradle
       run: |
