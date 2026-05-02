@@ -60,7 +60,7 @@ fun NovelDetailScreen(viewModel: XSGrokViewModel) {
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     // 显示角色设定
-                    if (novel.foundation?.characterSettings?.isNotBlank()) {
+                    if (novel.foundation?.characterSettings?.isNotBlank() ?: false) {
                         Text(
                             text = "角色设定: ${(novel.foundation?.characterSettings ?: "").take(50)}${if ((novel.foundation?.characterSettings?.length ?: 0) > 50) "..." else ""}",
                             style = MaterialTheme.typography.bodyMedium,

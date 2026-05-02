@@ -227,7 +227,7 @@ object SimplePromptBuilder {
         
         val userPrompt = buildString {
             appendLine("当前章节摘要：")
-            appendLine(novel.foundation?.chapterSummaries.ifBlank { "（暂无）" })
+            appendLine((novel.foundation?.chapterSummaries ?: "").ifBlank { "（暂无）" })
             appendLine()
             appendLine("最新完成的章节：")
             appendLine("章节标题：${newChapter.title}")
