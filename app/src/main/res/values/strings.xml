@@ -1,137 +1,155 @@
 <resources>
     <string name="app_name">XSGrok</string>
-    <string name="settings">Settings</string>
-    <string name="new_novel">New Novel</string>
-    <string name="chapters">Chapters</string>
-    <string name="characters">Characters</string>
-    <string name="drafts">Drafts</string>
-    <string name="export">Export</string>
+    <string name="settings">设置</string>
+    <string name="new_novel">新建小说</string>
+    <string name="chapters">章节</string>
+    <string name="characters">角色</string>
+    <string name="drafts">草稿</string>
+    <string name="export">导出</string>
     <string name="api_key">API Key</string>
-    <string name="api_endpoint">API Endpoint</string>
-    <string name="novel_title">Novel Title</string>
-    <string name="novel_type">Novel Type</string>
-    <string name="novel_style">Novel Style</string>
-    <string name="main_character">Main Character</string>
-    <string name="generate">Generate</string>
-    <string name="continue_writing">Continue Writing</string>
-    <string name="save">Save</string>
-    <string name="delete">Delete</string>
-    <string name="dark_mode">Dark Mode</string>
-    <string name="light_mode">Light Mode</string>
+    <string name="api_endpoint">API 端点</string>
+    <string name="novel_title">小说标题</string>
+    <string name="novel_type">小说类型</string>
+    <string name="novel_style">写作风格</string>
+    <string name="main_character">主角</string>
+    <string name="generate">生成</string>
+    <string name="continue_writing">继续写作</string>
+    <string name="save">保存</string>
+    <string name="delete">删除</string>
+    <string name="dark_mode">深色模式</string>
+    <string name="light_mode">浅色模式</string>
 
     <!-- Navigation -->
-    <string name="home">Home</string>
-    <string name="new_label">New</string>
-    <string name="back">Back</string>
-    <string name="toggle_theme">Toggle Theme</string>
+    <string name="home">首页</string>
+    <string name="creation">创作</string>
+    <string name="bookshelf">书架</string>
+    <string name="new_label">新建</string>
+    <string name="back">返回</string>
+    <string name="toggle_theme">切换主题</string>
 
     <!-- Screens -->
-    <string name="novel_detail">Novel Detail</string>
-    <string name="generate_chapter">Generate Chapter</string>
-    <string name="bookshelf">Bookshelf</string>
-    <string name="reading">Reading</string>
-    <string name="world_building">World Building</string>
+    <string name="novel_detail">小说详情</string>
+    <string name="generate_chapter">生成章节</string>
+    <string name="reading">阅读</string>
+    <string name="world_building">世界观设定</string>
 
     <!-- Novel Creation -->
-    <string name="create_novel">Create Novel</string>
-    <string name="enter_novel_title">Enter novel title</string>
-    <string name="genre">Genre</string>
-    <string name="style">Style</string>
-    <string name="outline">Outline</string>
-    <string name="enter_outline">Enter your novel outline</string>
-    <string name="describe_main_character">Describe your main character</string>
+    <string name="create_novel">创建小说</string>
+    <string name="enter_novel_title">输入小说标题</string>
+    <string name="genre">类型</string>
+    <string name="style">风格</string>
+    <string name="outline">大纲</string>
+    <string name="enter_outline">输入您的小说大纲</string>
+    <string name="describe_main_character">描述您的主角</string>
 
     <!-- Characters -->
-    <string name="add">Add</string>
-    <string name="cancel">Cancel</string>
-    <string name="add_character">Add Character</string>
-    <string name="edit_character">Edit Character</string>
-    <string name="name">Name</string>
-    <string name="role">Role</string>
-    <string name="description">Description</string>
-    <string name="no_characters">No characters yet</string>
-    <string name="delete_character">Delete Character</string>
-    <string name="delete_character_confirm">Are you sure you want to delete "%1$s"?</string>
+    <string name="add">添加</string>
+    <string name="cancel">取消</string>
+    <string name="add_character">添加角色</string>
+    <string name="edit_character">编辑角色</string>
+    <string name="name">姓名</string>
+    <string name="role">角色定位</string>
+    <string name="description">描述</string>
+    <string name="no_characters">暂无角色</string>
+    <string name="delete_character">删除角色</string>
+    <string name="delete_character_confirm">确定要删除"%1$s"吗？</string>
 
     <!-- Chapter -->
-    <string name="chapter_title">Chapter Title</string>
-    <string name="enter_chapter_title">Enter chapter title</string>
-    <string name="novel_prefix">Novel: </string>
-    <string name="stop">Stop</string>
-    <string name="export_txt">Export TXT</string>
-    <string name="done">Done</string>
-    <string name="continue_label">Continue</string>
-    <string name="generating">Generating...</string>
-    <string name="generated_content">Generated Content</string>
-    <string name="waiting_content">Waiting for content...</string>
-    <string name="export_novel">Export Novel</string>
-    <string name="new_chapter">New Chapter</string>
-    <string name="no_chapters">No chapters yet</string>
-    <string name="chapter_num">Chapter %1$d</string>
-    <string name="close">Close</string>
-    <string name="words_count">%1$d words</string>
-    <string name="expand">Expand</string>
-    <string name="collapse">Collapse</string>
-    <string name="chapter_list">Chapter List</string>
-    <string name="prev_chapter">Previous</string>
-    <string name="next_chapter">Next</string>
+    <string name="chapter_title">章节标题</string>
+    <string name="enter_chapter_title">输入章节标题</string>
+    <string name="novel_prefix">小说：</string>
+    <string name="stop">停止</string>
+    <string name="export_txt">导出TXT</string>
+    <string name="done">完成</string>
+    <string name="continue_label">继续</string>
+    <string name="generating">生成中...</string>
+    <string name="generated_content">生成内容</string>
+    <string name="waiting_content">等待内容...</string>
+    <string name="export_novel">导出小说</string>
+    <string name="new_chapter">新章节</string>
+    <string name="no_chapters">暂无章节</string>
+    <string name="chapter_num">第%1$d章</string>
+    <string name="close">关闭</string>
+    <string name="words_count">%1$d字</string>
+    <string name="expand">展开</string>
+    <string name="collapse">收起</string>
+    <string name="chapter_list">章节列表</string>
+    <string name="prev_chapter">上一章</string>
+    <string name="next_chapter">下一章</string>
 
     <!-- Bookshelf -->
-    <string name="no_books">No books yet</string>
-    <string name="create_book_hint">Create a novel to see it here</string>
-    <string name="total_words">Total: %1$d words</string>
+    <string name="no_books">书架空空</string>
+    <string name="create_book_hint">创建小说后会在此显示</string>
+    <string name="total_words">总计：%1$d字</string>
 
     <!-- World Building -->
-    <string name="world_background">World Background</string>
-    <string name="world_background_hint">Describe the world setting...</string>
+    <string name="world_background">世界观背景</string>
+    <string name="world_background_hint">描述世界观设定...</string>
     <string name="power_system">核心设定</string>
     <string name="power_system_hint">如：修炼等级/感情线框架/社会阶层/科技体系等，无则留空</string>
-    <string name="world_rules">World Rules</string>
-    <string name="world_rules_hint">Special rules of this world...</string>
-    <string name="locations">Locations</string>
-    <string name="factions">Factions</string>
-    <string name="items">Items</string>
-    <string name="skills">Skills</string>
-    <string name="timeline">Timeline</string>
-    <string name="ai_generate">AI Generate</string>
-    <string name="ai_generate_world">AI Generate World Setting</string>
-    <string name="edit">Edit</string>
+    <string name="world_rules">世界规则</string>
+    <string name="world_rules_hint">这个世界特殊规则...</string>
+    <string name="locations">地点</string>
+    <string name="factions">势力</string>
+    <string name="items">物品</string>
+    <string name="skills">技能</string>
+    <string name="timeline">时间线</string>
+    <string name="ai_generate">AI生成</string>
+    <string name="ai_generate_world">AI生成世界观</string>
+    <string name="edit">编辑</string>
 
     <!-- Auto Mode -->
-    <string name="auto_mode">Auto</string>
-    <string name="manual_mode">Manual Mode</string>
-    <string name="enter_one_sentence">Enter one sentence to start your novel...</string>
-    <string name="start_auto">Start Auto Generation</string>
-    <string name="start_generate">Start Generate</string>
-    <string name="guide_next">Guide next chapter...</string>
-    <string name="auto_generating">Auto generating novel...</string>
-    <string name="generating_outline">AI is creating novel outline and settings...</string>
-    <string name="please_wait">Please wait...</string>
-    <string name="novel_completed">Novel creation completed!</string>
-    <string name="read">Read</string>
-    <string name="edit_settings">Edit Settings</string>
-    <string name="create_new_novel">Create New Novel</string>
+    <string name="auto_mode">全自动创作</string>
+    <string name="manual_mode">手动模式</string>
+    <string name="enter_one_sentence">输入一句话开始创作...</string>
+    <string name="start_auto">开始自动生成</string>
+    <string name="start_generate">开始生成</string>
+    <string name="guide_next">引导下一章...</string>
+    <string name="auto_generating">正在自动生成小说...</string>
+    <string name="generating_outline">AI正在创建小说大纲和设定...</string>
+    <string name="please_wait">请稍候...</string>
+    <string name="novel_completed">小说创作完成！</string>
+    <string name="read">阅读</string>
+    <string name="edit_settings">编辑设定</string>
+    <string name="create_new_novel">创建新小说</string>
 
     <!-- Home -->
-    <string name="my_novels">My Novels</string>
-    <string name="no_novels">No novels yet</string>
-    <string name="create_first_novel">Create your first novel to get started</string>
-    <string name="chapters_count">%1$d chapters</string>
-    <string name="delete_novel">Delete Novel</string>
-    <string name="delete_novel_confirm">Are you sure you want to delete "%1$s"?</string>
+    <string name="my_novels">我的小说</string>
+    <string name="no_novels">暂无小说</string>
+    <string name="create_first_novel">创建您的第一部小说</string>
+    <string name="chapters_count">%1$d章</string>
+    <string name="delete_novel">删除小说</string>
+    <string name="delete_novel_confirm">确定要删除"%1$s"吗？</string>
 
     <!-- Settings -->
-    <string name="model_selection">Model Selection</string>
-    <string name="about">About</string>
-    <string name="version">Version</string>
-    <string name="api_configuration">API Configuration</string>
-    <string name="enter_api_key">Enter your API key</string>
-    <string name="toggle_visibility">Toggle visibility</string>
-    <string name="model">Model</string>
-    <string name="app_description">AI-powered novel generation app</string>
-    <string name="appearance">Appearance</string>
+    <string name="model_selection">模型选择</string>
+    <string name="about">关于</string>
+    <string name="version">版本</string>
+    <string name="api_configuration">API配置</string>
+    <string name="enter_api_key">输入您的API密钥</string>
+    <string name="toggle_visibility">切换显示</string>
+    <string name="model">模型</string>
+    <string name="app_description">AI驱动的智能小说生成器</string>
+    <string name="appearance">外观</string>
+    <string name="test_connection">测试连接</string>
+    <string name="connection_success">连接成功</string>
+    <string name="connection_failed">连接失败</string>
 
     <!-- Drafts -->
-    <string name="no_drafts">No drafts</string>
-    <string name="created">Created</string>
+    <string name="no_drafts">暂无草稿</string>
+    <string name="created">创建于</string>
+
+    <!-- Reading -->
+    <string name="font_size">字体大小</string>
+    <string name="line_spacing">行间距</string>
+    <string name="immersive_mode">沉浸阅读</string>
+    <string name="reading_settings">阅读设置</string>
+    <string name="small">小</string>
+    <string name="medium">中</string>
+    <string name="large">大</string>
+    <string name="extra_large">特大</string>
+    <string name="tight">紧凑</string>
+    <string name="loose">宽松</string>
+    <string name="chapter_words">本章%1$d字</string>
+    <string name="words_generated">已输出%1$d字</string>
 </resources>

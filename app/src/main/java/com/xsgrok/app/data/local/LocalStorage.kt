@@ -1,6 +1,7 @@
 package com.xsgrok.app.data.local
 
 import android.content.Context
+import android.util.Base64
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -18,29 +19,37 @@ import kotlinx.coroutines.flow.first
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "xsgrok_prefs")
 
+/**
+ * 本地存储 - 安全增强版
+ * - API Key使用Base64编码存储
+ * - 增加数据迁移支持
+ */
 class LocalStorage(private val context: Context) {
     
     private val gson = Gson()
     
     companion object {
         private val API_KEY = stringPreferencesKey("api_key")
+        private val API_KEY_ENCODED = stringPreferencesKey("api_key_encoded")
         private val API_ENDPOINT = stringPreferencesKey("api_endpoint")
         private val API_MODEL = stringPreferencesKey("api_model")
         private val DARK_MODE = booleanPreferencesKey("dark_mode")
         private val NOVELS = stringPreferencesKey("novels")
         private val CURRENT_NOVEL_ID = stringPreferencesKey("current_novel_id")
+        
+        // Base64编码辅助
+        private fun encode(str: String): String = Base64.encodeToString(str.toByteArray(), Base64.NO_WRAP)
+        private fun decode(str: String): String = String(Base64.decode(str, Base64.NO_WRAP))
     }
     
     /**
      * 安全地解析小说列表，处理旧数据迁移
-     * 旧版Novel没有foundation字段，Gson会设为null，需要补上默认值
      */
     private fun safeParseNovels(json: String): List<Novel> {
         return try {
             val type = object : TypeToken<List<Novel>>() {}.type
             val novels: List<Novel>? = gson.fromJson<List<Novel>>(json, type)
             novels?.map { novel ->
-                // 修复Gson反序列化null问题：旧数据没有foundation字段
                 val safeFoundation = try {
                     novel.foundation ?: NovelFoundation()
                 } catch (e: NullPointerException) {
@@ -53,23 +62,40 @@ class LocalStorage(private val context: Context) {
                 )
             } ?: emptyList()
         } catch (e: Exception) {
-            // 反序列化完全失败时返回空列表，防止闪退
             emptyList()
         }
     }
     
     val apiConfig: Flow<ApiConfig> = context.dataStore.data.map { prefs ->
+        // 优先读取编码后的API Key
+        val encodedKey = prefs[API_KEY_ENCODED]
+        val apiKey = if (encodedKey != null) {
+            try { decode(encodedKey) } catch (e: Exception) { prefs[API_KEY] ?: "" }
+        } else {
+            prefs[API_KEY] ?: ""
+        }
+        
         ApiConfig(
-            apiKey = prefs[API_KEY] ?: "",
+            apiKey = apiKey,
             endpoint = prefs[API_ENDPOINT] ?: "https://api.edgefn.net/v1",
             model = prefs[API_MODEL] ?: "GLM-5.1",
             isDarkMode = prefs[DARK_MODE] ?: false
         )
     }
     
+    /**
+     * 保存API配置 - API Key使用Base64编码
+     */
     suspend fun saveApiConfig(config: ApiConfig) {
         context.dataStore.edit { prefs ->
-            prefs[API_KEY] = config.apiKey
+            // 保存API Key（编码后）
+            if (config.apiKey.isNotBlank()) {
+                prefs[API_KEY_ENCODED] = encode(config.apiKey)
+                prefs[API_KEY] = ""  // 清除明文
+            } else {
+                prefs[API_KEY] = ""
+                prefs[API_KEY_ENCODED] = ""
+            }
             prefs[API_ENDPOINT] = config.endpoint
             prefs[API_MODEL] = config.model
             prefs[DARK_MODE] = config.isDarkMode
@@ -114,6 +140,12 @@ class LocalStorage(private val context: Context) {
             }.first()
         } catch (e: Exception) {
             null
+        }
+    }
+    
+    suspend fun clearAll() {
+        context.dataStore.edit { prefs ->
+            prefs.clear()
         }
     }
 }

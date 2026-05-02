@@ -570,162 +570,32 @@ private fun ColumnScope.GeneratingChapterContent(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "正在生成章节内容...",
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                HorizontalDivider()
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // 流式显示章节内容
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Text(
-                        text = streamingContent.ifBlank { "正在创作中..." },
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        if (isGenerating) {
-            OutlinedButton(
-                onClick = onStop,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Stop, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("停止生成")
-            }
-        }
-    }
-}
-
-/**
- * COMPLETED 状态：完成界面
- */
-@Composable
-private fun CompletedContent(
-    currentNovel: com.xsgrok.app.data.model.Novel?,
-    nextChapterGuide: String,
-    onNextGuideChange: (String) -> Unit,
-    onNavigateToReading: () -> Unit,
-    onContinueWriting: () -> Unit,
-    onReset: () -> Unit
-) {
-    Column(
-        modifier = Modifier.verticalScroll(rememberScrollState())
-    ) {
-        // 完成卡片
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = stringResource(R.string.novel_completed),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                
-                currentNovel?.let { novel ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "《${novel.title}》已完成 ${novel.chapters.size} 章",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(onClick = onNavigateToReading) {
-                        Icon(Icons.Default.MenuBook, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("阅读")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "正在生成章节内容...",
+                            style = MaterialTheme.typography.titleSmall
+                        )
                     }
-                    
-                    OutlinedButton(onClick = onReset) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("新作品")
+                    // 字数统计
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Text(
+                            text = "已输出 ${streamingContent.length} 字",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
                     }
                 }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // 继续生成下一章
-        Text(
-            text = "继续创作",
-            style = MaterialTheme.typography.titleSmall
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        OutlinedTextField(
-            value = nextChapterGuide,
-            onValueChange = onNextGuideChange,
-            label = { Text("下一章引导（可选）") },
-            placeholder = { Text("例如：主角遇到危机，展开反击") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Button(
-            onClick = onContinueWriting,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.NavigateNext, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("生成下一章")
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // 章节摘要预览
-        currentNovel?.foundation?.chapterSummaries?.let { summary ->
-            if (summary.isNotBlank()) {
-                Text(
-                    text = "故事摘要",
-                    style = MaterialTheme.typography.titleSmall
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = summary,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-            }
-        }
-    }
-}
