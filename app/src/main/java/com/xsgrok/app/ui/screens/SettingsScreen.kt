@@ -51,7 +51,7 @@ fun SettingsScreen(viewModel: XSGrokViewModel) {
     var testResult by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
     
     // 模型列表
-    val models = listOf("GLM-5.1", "gpt-4o", "gpt-4o-mini", "claude-3-sonnet")
+    val models = listOf("grok-4.3", "GLM-5.1", "gpt-4o", "gpt-4o-mini", "claude-3-sonnet")
     
     // 导出格式选项
     var exportFormatExpanded by remember { mutableStateOf(false) }
